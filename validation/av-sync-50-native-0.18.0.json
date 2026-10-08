@@ -1,0 +1,627 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.18.0)",
+  "method": "Content flash/beep correlation; FILE output, not NDI",
+  "input": {
+    "pairs": [
+      {
+        "video_s": 0.0,
+        "audio_s": 4.1666666666666665e-05,
+        "offset_ms": 0.041666666666666664
+      },
+      {
+        "video_s": 1.0,
+        "audio_s": 1.0000416666666667,
+        "offset_ms": 0.04166666666671759
+      },
+      {
+        "video_s": 2.0,
+        "audio_s": 2.0000416666666667,
+        "offset_ms": 0.04166666666671759
+      },
+      {
+        "video_s": 3.0,
+        "audio_s": 3.0000416666666667,
+        "offset_ms": 0.04166666666671759
+      },
+      {
+        "video_s": 4.0,
+        "audio_s": 4.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 5.0,
+        "audio_s": 5.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 6.0,
+        "audio_s": 6.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 7.0,
+        "audio_s": 7.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 8.0,
+        "audio_s": 8.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 9.0,
+        "audio_s": 9.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 10.0,
+        "audio_s": 10.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 11.0,
+        "audio_s": 11.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 12.0,
+        "audio_s": 12.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 13.0,
+        "audio_s": 13.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 14.0,
+        "audio_s": 14.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 15.0,
+        "audio_s": 15.000041666666666,
+        "offset_ms": 0.0416666666662735
+      },
+      {
+        "video_s": 16.0,
+        "audio_s": 16.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 17.0,
+        "audio_s": 17.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 18.0,
+        "audio_s": 18.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 19.0,
+        "audio_s": 19.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 20.0,
+        "audio_s": 20.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 21.0,
+        "audio_s": 21.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 22.0,
+        "audio_s": 22.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 23.0,
+        "audio_s": 23.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 24.0,
+        "audio_s": 24.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 25.0,
+        "audio_s": 25.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 26.0,
+        "audio_s": 26.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 27.0,
+        "audio_s": 27.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 28.0,
+        "audio_s": 28.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 29.0,
+        "audio_s": 29.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 30.0,
+        "audio_s": 30.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 31.0,
+        "audio_s": 31.000041666666668,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 32.0,
+        "audio_s": 32.00004166666667,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 33.0,
+        "audio_s": 33.00004166666667,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 34.0,
+        "audio_s": 34.00004166666667,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 35.0,
+        "audio_s": 35.00004166666667,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 36.0,
+        "audio_s": 36.00004166666667,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 37.0,
+        "audio_s": 37.00004166666667,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 38.0,
+        "audio_s": 38.00004166666667,
+        "offset_ms": 0.041666666668049857
+      },
+      {
+        "video_s": 39.0,
+        "audio_s": 39.00004166666667,
+        "offset_ms": 0.041666666668049857
+      }
+    ],
+    "min_offset_ms": 0.0416666666662735,
+    "max_offset_ms": 0.041666666668049857,
+    "drift_ms_per_second": 5.817700945420535e-14
+  },
+  "program": {
+    "pairs": [
+      {
+        "video_s": 0.22,
+        "audio_s": 0.2200625,
+        "offset_ms": 0.06249999999999312
+      },
+      {
+        "video_s": 1.22,
+        "audio_s": 1.2200416666666667,
+        "offset_ms": 0.04166666666671759
+      },
+      {
+        "video_s": 2.22,
+        "audio_s": 2.2200625,
+        "offset_ms": 0.06249999999985434
+      },
+      {
+        "video_s": 3.22,
+        "audio_s": 3.2200625,
+        "offset_ms": 0.06249999999985434
+      },
+      {
+        "video_s": 4.22,
+        "audio_s": 4.220041666666667,
+        "offset_ms": 0.04166666666716168
+      },
+      {
+        "video_s": 5.22,
+        "audio_s": 5.2200625,
+        "offset_ms": 0.06250000000029843
+      },
+      {
+        "video_s": 6.22,
+        "audio_s": 6.2200625,
+        "offset_ms": 0.06250000000029843
+      },
+      {
+        "video_s": 7.22,
+        "audio_s": 7.2200625,
+        "offset_ms": 0.06250000000029843
+      },
+      {
+        "video_s": 8.22,
+        "audio_s": 8.2200625,
+        "offset_ms": 0.06249999999852207
+      },
+      {
+        "video_s": 9.22,
+        "audio_s": 9.2200625,
+        "offset_ms": 0.06249999999852207
+      },
+      {
+        "video_s": 10.22,
+        "audio_s": 10.2200625,
+        "offset_ms": 0.06249999999852207
+      },
+      {
+        "video_s": 11.22,
+        "audio_s": 11.2200625,
+        "offset_ms": 0.06249999999852207
+      },
+      {
+        "video_s": 12.22,
+        "audio_s": 12.2200625,
+        "offset_ms": 0.06249999999852207
+      },
+      {
+        "video_s": 13.22,
+        "audio_s": 13.2200625,
+        "offset_ms": 0.06249999999852207
+      },
+      {
+        "video_s": 14.22,
+        "audio_s": 14.2200625,
+        "offset_ms": 0.06249999999852207
+      },
+      {
+        "video_s": 15.22,
+        "audio_s": 15.2200625,
+        "offset_ms": 0.06249999999852207
+      },
+      {
+        "video_s": 16.22,
+        "audio_s": 16.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 17.22,
+        "audio_s": 17.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 18.22,
+        "audio_s": 18.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 19.22,
+        "audio_s": 19.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 20.22,
+        "audio_s": 20.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 21.22,
+        "audio_s": 21.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 22.22,
+        "audio_s": 22.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 23.22,
+        "audio_s": 23.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 24.22,
+        "audio_s": 24.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 25.22,
+        "audio_s": 25.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 26.22,
+        "audio_s": 26.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 27.22,
+        "audio_s": 27.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 28.22,
+        "audio_s": 28.2200625,
+        "offset_ms": 0.06250000000207478
+      },
+      {
+        "video_s": 29.22,
+        "audio_s": 29.2200625,
+        "offset_ms": 0.06250000000207478
+      }
+    ],
+    "min_offset_ms": 0.04166666666671759,
+    "max_offset_ms": 0.06250000000207478,
+    "drift_ms_per_second": 0.00022246941057083155
+  },
+  "takes": [
+    {
+      "elapsed_s": 0.001367484001093544,
+      "effect": "MIX 10",
+      "source": 2
+    },
+    {
+      "elapsed_s": 0.6021503859956283,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 1
+    },
+    {
+      "elapsed_s": 1.202664693002589,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 2
+    },
+    {
+      "elapsed_s": 1.8039172090066131,
+      "effect": "MIX 10",
+      "source": 1
+    },
+    {
+      "elapsed_s": 2.404970700998092,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 2
+    },
+    {
+      "elapsed_s": 3.0053268560004653,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 1
+    },
+    {
+      "elapsed_s": 3.6062803179956973,
+      "effect": "MIX 10",
+      "source": 2
+    },
+    {
+      "elapsed_s": 4.207169175002491,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 1
+    },
+    {
+      "elapsed_s": 4.808154897997156,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 2
+    },
+    {
+      "elapsed_s": 5.4087056730058976,
+      "effect": "MIX 10",
+      "source": 1
+    },
+    {
+      "elapsed_s": 6.009276256008889,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 2
+    },
+    {
+      "elapsed_s": 6.610356749006314,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 1
+    },
+    {
+      "elapsed_s": 7.211130313007743,
+      "effect": "MIX 10",
+      "source": 2
+    },
+    {
+      "elapsed_s": 7.811420879996149,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 1
+    },
+    {
+      "elapsed_s": 8.411967427004129,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 2
+    },
+    {
+      "elapsed_s": 9.012642451009015,
+      "effect": "MIX 10",
+      "source": 1
+    },
+    {
+      "elapsed_s": 9.613507196001592,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 2
+    },
+    {
+      "elapsed_s": 10.214382564008702,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 1
+    },
+    {
+      "elapsed_s": 10.814786607996211,
+      "effect": "MIX 10",
+      "source": 2
+    },
+    {
+      "elapsed_s": 11.415093632007483,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 1
+    },
+    {
+      "elapsed_s": 12.015600829006871,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 2
+    },
+    {
+      "elapsed_s": 12.61652408100781,
+      "effect": "MIX 10",
+      "source": 1
+    },
+    {
+      "elapsed_s": 13.217273160000332,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 2
+    },
+    {
+      "elapsed_s": 13.817942003995995,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 1
+    },
+    {
+      "elapsed_s": 14.418436150997877,
+      "effect": "MIX 10",
+      "source": 2
+    },
+    {
+      "elapsed_s": 15.01885919700726,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 1
+    },
+    {
+      "elapsed_s": 15.619393253000453,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 2
+    },
+    {
+      "elapsed_s": 16.220582043999457,
+      "effect": "MIX 10",
+      "source": 1
+    },
+    {
+      "elapsed_s": 16.82130823499756,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 2
+    },
+    {
+      "elapsed_s": 17.42187633299909,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 1
+    },
+    {
+      "elapsed_s": 18.022251002999838,
+      "effect": "MIX 10",
+      "source": 2
+    },
+    {
+      "elapsed_s": 18.62285167799564,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 1
+    },
+    {
+      "elapsed_s": 19.223274767005933,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 2
+    },
+    {
+      "elapsed_s": 19.824387369997567,
+      "effect": "MIX 10",
+      "source": 1
+    },
+    {
+      "elapsed_s": 20.425193292001495,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 2
+    },
+    {
+      "elapsed_s": 21.02618092900957,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 1
+    },
+    {
+      "elapsed_s": 21.626590332001797,
+      "effect": "MIX 10",
+      "source": 2
+    },
+    {
+      "elapsed_s": 22.227055476003443,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 1
+    },
+    {
+      "elapsed_s": 22.827580201003002,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 2
+    },
+    {
+      "elapsed_s": 23.428484807009227,
+      "effect": "MIX 10",
+      "source": 1
+    },
+    {
+      "elapsed_s": 24.02879334500176,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 2
+    },
+    {
+      "elapsed_s": 24.629204601005767,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 1
+    },
+    {
+      "elapsed_s": 25.22956141200848,
+      "effect": "MIX 10",
+      "source": 2
+    },
+    {
+      "elapsed_s": 25.830042528003105,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 1
+    },
+    {
+      "elapsed_s": 26.430416008006432,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 2
+    },
+    {
+      "elapsed_s": 27.030852227995638,
+      "effect": "MIX 10",
+      "source": 1
+    },
+    {
+      "elapsed_s": 27.63141562799865,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 2
+    },
+    {
+      "elapsed_s": 28.231960420001997,
+      "effect": "DMENATIVE 10 SONY_1041",
+      "source": 1
+    },
+    {
+      "elapsed_s": 28.832271236009547,
+      "effect": "MIX 10",
+      "source": 2
+    },
+    {
+      "elapsed_s": 29.432898222003132,
+      "effect": "WIPESONY 10 SONY 23 SOFT 20 BORDER 5",
+      "source": 1
+    }
+  ],
+  "fixture": {
+    "input_fps": "50",
+    "input_sample_rate": 48000,
+    "size": "320x180",
+    "stalls": false
+  },
+  "instrumentation_note": "Original 50 fps fixture has contiguous media; final tool additionally verifies individual media timestamps."
+}

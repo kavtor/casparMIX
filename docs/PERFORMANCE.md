@@ -72,3 +72,17 @@ The previous live renderer was no longer reachable and its concurrency was
 not verified, so these runs must not claim a coexisting production graph.
 A subsequent 130 fps attempt crashed during startup and is not a valid
 capacity measurement. Crash diagnosis is tracked separately.
+
+## Live GPU observation (2026-10-08)
+
+Short per-process `nvidia-smi pmon` samples of the user's 1080p50 mixer showed
+CasparCG at roughly 19–46% GPU activity and the desktop compositor at roughly
+5–17%. A later ten-second sample included another application at 68–96%; it
+cannot establish a CasparCG regression relative to the previously observed 30%.
+Per-process activity is an estimate, may overlap, and must not simply be summed.
+
+No capacity claim or rendering change is based on these samples. Compare an
+identical source/M/E/output graph, consumers and receiver connections, with the
+GPU otherwise idle. NDI readback/encoding, live HTML and desktop composition must
+be distinguished from native effect cost. See [A/V investigation](AV-SYNC.md) for
+the separate content-timing tests and their limitations.
