@@ -53,6 +53,7 @@ preserve their checksums and reproducibility. Current documentation and tools us
 kavtor.
 
 - [Commands](docs/COMMANDS.md), [changelog](docs/CHANGELOG.md)
+- [A/V synchronization investigation](docs/AV-SYNC.md)
 - [Timing](docs/TIMING.md), [capacity/performance](docs/PERFORMANCE.md)
 - [Dependencies](docs/DEPENDENCIES.md), [roadmap](docs/ROADMAP.md)
 - [Sony catalogue](docs/SONY-CATALOGUE.md), [deferred transports](docs/TRANSPORTS.md)
