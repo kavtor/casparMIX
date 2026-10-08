@@ -1,0 +1,127 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 46abe77da5a668d64fe39a1da994c8d48b2ca0be..d0e6c727aeef4c41a1d26287ff34e4986d88c995 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -594,7 +594,59 @@ float sony_fan(vec2 q,float direction,float half_width) {
+     return abs(angle)<=half_width?distance:-distance;
+ }
+ // Ordered cell traversal: no per-frame CPU mask or GPU rank texture.
+-float sony_tile_rank(vec2 c,vec2 n) {
++float sony_spiral_rank(vec2 c,vec2 n) {
++    float ring=min(min(c.x,c.y),min(n.x-1.0-c.x,n.y-1.0-c.y));
++    vec2 inner=n-vec2(2.0*ring),q=c-vec2(ring);
++    float before=n.x*n.y-inner.x*inner.y;
++    if(inner.y==1.0)return before+q.x;
++    if(inner.x==1.0)return before+q.y;
++    if(q.y==0.0)return before+q.x;
++    if(q.x==inner.x-1.0)return before+inner.x+q.y-1.0;
++    if(q.y==inner.y-1.0)return before+inner.x+inner.y-2.0+inner.x-1.0-q.x;
++    return before+2.0*inner.x+inner.y-3.0+inner.y-1.0-q.y;
++}float sony_tile_rank(vec2 c,vec2 n) {
++    float total=n.x*n.y;
++    if(sony_code>=250&&sony_code<=257){
++        bool vertical=sony_code<=253;
++        int variant=vertical?sony_code-250:sony_code-254;
++        float split=floor((vertical?n.x:n.y)*.5);
++        bool second=(vertical?c.x:c.y)>=split;
++        if(vertical){
++            float width=second?n.x-split:split;
++            if(second)c.x=n.x-1.0-c.x;
++            n.x=width;
++            if(variant==1||(variant==2&&second)||(variant==3&&!second))c.y=n.y-1.0-c.y;
++            float rank=c.x*n.y+(mod(c.x,2.0)<1.0?c.y:n.y-1.0-c.y);
++            return rank/(n.x*n.y)*total;
++        }
++        float height=second?n.y-split:split;
++        if(second)c.y=n.y-1.0-c.y;
++        n.y=height;
++        if(variant==1||(variant==2&&second)||(variant==3&&!second))c.x=n.x-1.0-c.x;
++        float rank=c.y*n.x+(mod(c.y,2.0)<1.0?c.x:n.x-1.0-c.x);
++        return rank/(n.x*n.y)*total;
++    }
++    if(sony_code>=260&&sony_code<=265){
++        bool four=sony_code>=264,vertical=sony_code==260||sony_code==261||sony_code==264;
++        if(four||sony_code<=261){float split=floor(n.x*.5),width=c.x>=split?n.x-split:split;if(c.x>=split)c.x=n.x-1.0-c.x;n.x=width;}
++        if(four||sony_code==262||sony_code==263){float split=floor(n.y*.5),height=c.y>=split?n.y-split:split;if(c.y>=split)c.y=n.y-1.0-c.y;n.y=height;}
++        if(sony_code==261)c.y=n.y-1.0-c.y;
++        if(sony_code==263)c.x=n.x-1.0-c.x;
++        if(vertical){c=c.yx;n=n.yx;}
++        return sony_spiral_rank(c,n)/(n.x*n.y)*total;
++    }
++    if(sony_code>=266&&sony_code<=269){
++        bool vertical=sony_code<=267;
++        if(sony_code==267)c.x=n.x-1.0-c.x;
++        if(sony_code==269){c.y=n.y-1.0-c.y;c.x=n.x-1.0-c.x;}
++        float lane=vertical?c.x:c.y,lanes=vertical?n.x:n.y;
++        float cell=vertical?c.y:c.x,length=vertical?n.y:n.x;
++
++        // Four overlapping lanes at neutral preparation, preserving direction.
++        float span=min(3.0,lanes);
++        return (lane+(cell/length)*span)/(lanes+span)*total;
++    }
++
+     if(sony_code==200)return c.y*n.x+(mod(c.y,2.0)<1.0?c.x:n.x-1.0-c.x);
+     if(sony_code==201)return c.x*n.y+(mod(c.x,2.0)<1.0?c.y:n.y-1.0-c.y);
+     if(sony_code==202||sony_code==203){
+@@ -610,16 +662,9 @@ float sony_tile_rank(vec2 c,vec2 n) {
+     else if(corner==2)c=n-vec2(1.0)-c;
+     else if(corner==3){c=vec2(n.y-1.0-c.y,c.x);n=n.yx;}
+     if(sony_code>=210){c=c.yx;n=n.yx;}
+-    float ring=min(min(c.x,c.y),min(n.x-1.0-c.x,n.y-1.0-c.y));
+-    vec2 inner=n-vec2(2.0*ring),q=c-vec2(ring);
+-    float before=n.x*n.y-inner.x*inner.y;
+-    if(inner.y==1.0)return before+q.x;
+-    if(inner.x==1.0)return before+q.y;
+-    if(q.y==0.0)return before+q.x;
+-    if(q.x==inner.x-1.0)return before+inner.x+q.y-1.0;
+-    if(q.y==inner.y-1.0)return before+inner.x+inner.y-2.0+inner.x-1.0-q.x;
+-    return before+2.0*inner.x+inner.y-3.0+inner.y-1.0-q.y;
++    return sony_spiral_rank(c,n);
+ }
++
+ float sony_mosaic(vec2 p,float t,float raster) {
+     vec2 physical=vec2(p.x*raster,p.y),size=vec2(sony_tile_size);
+     vec2 count=ceil(vec2(raster,1.0)/size),cell=clamp(floor(physical/size),vec2(0),count-vec2(1));
+@@ -643,7 +688,7 @@ float sony_distance(vec2 p, float t, float cell_aspect)
+     vec2 q=p-sony_center,extent=max(sony_center,vec2(1)-sony_center);
+     float ar=max(sony_aspect,.01),raster=max(cell_aspect,.01),sx=ar*raster;
+     vec2 physical=vec2(q.x*raster,q.y),normal=vec2(q.x/ar,q.y),bounds=vec2(extent.x/ar,extent.y);
+-    if((sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213))return sony_mosaic(p,t,raster);
++    if((sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269))return sony_mosaic(p,t,raster);
+     if(sony_code==1)return (t-p.x)*raster;
+     if(sony_code==2)return (t-(1-p.x))*raster;
+     if(sony_code==3)return t-p.y;
+@@ -757,7 +802,7 @@ float sony_matte(vec2 packed_uv)
+     if (t >= 1.0) return sony_role == 2 ? 0.0 : sony_role == 1 ? 1.0 : outgoing ? 0.0 : 1.0;
+     float d = sony_distance(p, sony_reverse ? 1.0-t : t, sony_output_aspect*grid.y/grid.x);
+     if (sony_reverse) d = -d;
+-    bool mosaic=(sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213);
++    bool mosaic=(sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269);
+     float soft=mosaic?min(sony_soft,sony_tile_size*.5):sony_soft;
+     float border=mosaic?min(sony_border,sony_tile_size*.5):sony_border;
+     if (sony_role == 1) return sony_coverage(d, soft);
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 965065db5b84c28a60e0e932153c4f59ac44c4da..a602fc9e283389306d606c164ce73ac338999373 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.9.3
++0.9.4
+diff --git a/src/core/producer/wipe/sony_wipe_producer.cpp b/src/core/producer/wipe/sony_wipe_producer.cpp
+index 42e2f118933cdc61356f95bee7caf96f9efc4554..a933bc25ba243a04c38e9b74512847be178c07d3 100644
+--- a/src/core/producer/wipe/sony_wipe_producer.cpp
++++ b/src/core/producer/wipe/sony_wipe_producer.cpp
+@@ -252,7 +252,12 @@ spl::shared_ptr<frame_producer> create_sony_wipe_producer(
+     const auto text = params[0].substr(12);
+     size_t end = 0;
+     const auto code = std::stoi(text, &end);
+-    if (end != text.size() || (!(code>=1 && code<=24) && code!=26 && code!=27 && code!=29 && code!=49 && !(code>=100&&code<=107) && !(code>=200&&code<=203) && !(code>=206&&code<=213) && code!=150 && code!=151 && code!=156 && code!=158 && code!=160 && code!=162 && code!=516 && code!=518 && code!=604 && code!=606 && code!=624 && code!=661 && !(code>=300&&code<=304)))
++    // TODO: Sony karaoke 220-223, undecoded matrix paths 224-247,
++    // random presets 270-272, dynamic random matrix 273 and diamond dust 274.
++    // Their IDs are reserved; never substitute another mask for these patterns.
++    if((code>=220&&code<=247)||(code>=270&&code<=274))
++        CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Sony wipe pattern pending implementation"));
++    if (end != text.size() || (!(code>=1 && code<=24) && code!=26 && code!=27 && code!=29 && code!=49 && !(code>=100&&code<=107) && !(code>=200&&code<=203) && !(code>=250&&code<=257) && !(code>=260&&code<=269) && !(code>=206&&code<=213) && code!=150 && code!=151 && code!=156 && code!=158 && code!=160 && code!=162 && code!=516 && code!=518 && code!=604 && code!=606 && code!=624 && code!=661 && !(code>=300&&code<=304)))
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unsupported Sony wipe pattern"));
+     return spl::make_shared<sony_wipe_producer>(dependencies, code,
+         std::vector<std::wstring>(params.begin()+1,params.end()));

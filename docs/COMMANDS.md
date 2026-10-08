@@ -75,11 +75,11 @@ It accepts the same geometry parameters, but no border color/mode. Optional
 ## Compatibility and current limits
 
 The upstream command set and numeric version remain unchanged. `VERSION` also
-contains the patch version. kavtor 0.9.0 requires casparMIX
+contains the patch version. Strata 0.9.0 requires casparMIX
 0.2.1 or later and uses these extensions directly; it does not support older engines.
 
 Native Sony transitions currently cover background video, not independent
-multi-keyer transition scheduling. Shadow modifiers are not yet native; kavtor
+multi-keyer transition scheduling. Shadow modifiers are not yet native; Strata
 uses its HTML path when a shadow is configured at transition start. Do not add a
 shadow halfway through a native preview and expect it to appear. Unsupported
 patterns also retain the HTML path. Native 3D DME remains separate future work.
@@ -200,7 +200,7 @@ Example scene before Base64 encoding:
 ```
 
 This adds no full-screen CEF replacement for arbitrary HTML templates. It is a
-small native graphics API, reusable by clients independently of kavtor.
+small native graphics API, reusable by clients independently of Strata.
 
 ## Native DME transitions (0.5.0)
 
@@ -257,7 +257,7 @@ without resetting the clock or progress. The previous fill remains until the new
 producer is ready. The native destination handoff remains unchanged: fill applies
 to the transition composition, not a permanent recolouring of its destination.
 The mixer client validates routing cycles and decides whether live updates are
-permitted; kavtor allows them in rehearsal and snapshots programme takes.
+permitted; Strata allows them in rehearsal and snapshots programme takes.
 
 ### Mosaic wipe size (0.9.3)
 
@@ -402,3 +402,9 @@ progress; at zero no incoming pixels are visible, at one B is full-frame.
 The ordinary manual, reverse and audio-crossfade contracts apply. This is
 a pictogram-based project interpretation awaiting operator confirmation;
 Sony's multi-stage Frame I/O/key preparation and dead bands are not simulated.
+
+### SPLIT direction correction (0.17.1)
+
+Sony 1011–1013 use operator-confirmed NORM entry and REV exit. Only those
+presets invert the earlier default; A/B endpoints and ordinary linear audio
+crossfade remain unchanged. Other Sony primitives retain their direction.
