@@ -21,6 +21,8 @@ def main():
   def run(*args,cwd=None):return subprocess.check_output(args,cwd=cwd,stderr=subprocess.STDOUT)
   if not a.upstream_checkout:
    run('git','init','-q',str(upstream));run('git','-C',str(upstream),'fetch','--depth=1',pin['repository'],commit)
+   run('git','-C',str(upstream),'update-ref','refs/heads/pinned',commit)
+   run('git','-C',str(upstream),'symbolic-ref','HEAD','refs/heads/pinned')
   run('git','-C',str(upstream),'cat-file','-e',commit+'^{commit}')
   trees=[]
   for label,patches in [('combined',[combined]),('ordered',ordered)]:
