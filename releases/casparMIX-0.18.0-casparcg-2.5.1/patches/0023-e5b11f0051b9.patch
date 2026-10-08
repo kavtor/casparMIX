@@ -1,0 +1,260 @@
+diff --git a/src/accelerator/ogl/image/image_kernel.cpp b/src/accelerator/ogl/image/image_kernel.cpp
+index d2cabf0dafa1b9084aae5c08a365fc52a7829656..7157fa5a661f07234fa2acc8dee7c885bc15d830 100644
+--- a/src/accelerator/ogl/image/image_kernel.cpp
++++ b/src/accelerator/ogl/image/image_kernel.cpp
+@@ -240,6 +240,8 @@ struct image_kernel::impl
+             shader_->set("sony_aspect", wipe.aspect);
+             shader_->set("sony_output_aspect", params.aspect_ratio);
+             shader_->set("sony_multi", wipe.multi);
++            shader_->set("sony_vertices",wipe.vertices);
++            shader_->set("sony_rounding",wipe.rounding/100.0);
+             shader_->set("sony_center", wipe.x, wipe.y);
+             shader_->set("sony_reverse", wipe.reverse);
+         }
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 560c887c1b3d8e78d1812397d702fdeb37694f65..7d7d9086a4e29ce9f8f75767843dc2371e74d6a4 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -530,36 +530,117 @@ uniform float sony_border;
+ uniform float sony_aspect;
+ uniform float sony_output_aspect;
+ uniform int sony_multi;
++uniform int sony_vertices;
++uniform float sony_rounding;
+ uniform vec2 sony_center;
+ uniform bool sony_reverse;
+ 
++float sony_round_box(vec2 point,vec2 half_size,float radius) {
++    vec2 d=abs(point)-half_size+radius;
++    return -(length(max(d,vec2(0.0)))+min(max(d.x,d.y),0.0)-radius);
++}
++float sony_segment_distance(vec2 point,vec2 a,vec2 b) {
++    vec2 edge=b-a;return length(point-a-edge*clamp(dot(point-a,edge)/max(dot(edge,edge),1e-12),0.0,1.0));
++}
++float sony_polygon(vec2 point,vec2 scale,bool star) {
++    const vec2 star_points[10]=vec2[10](vec2(0.000000000,-1.000000000),
++    vec2(0.141068461,-0.194164079),
++    vec2(0.951056516,-0.309016994),
++    vec2(0.228253564,0.074164079),
++    vec2(0.587785252,0.809016994),
++    vec2(0.000000000,0.240000000),
++    vec2(-0.587785252,0.809016994),
++    vec2(-0.228253564,0.074164079),
++    vec2(-0.951056516,-0.309016994),
++    vec2(-0.141068461,-0.194164079));
++    const vec2 arrow_points[4]=vec2[4](vec2(0,-1),vec2(1,1),vec2(0,.2),vec2(-1,1));
++    int count=star?10:4;float closest=1e10;bool inside=false;
++    vec2 previous=(star?star_points[count-1]:arrow_points[count-1])*scale;
++    for(int i=0;i<10;++i){if(i>=count)break;vec2 vertex=(star?star_points[i]:arrow_points[i])*scale;
++        closest=min(closest,sony_segment_distance(point,previous,vertex));
++        if((vertex.y>point.y)!=(previous.y>point.y)){
++            float crossing=(previous.x-vertex.x)*(point.y-vertex.y)/(previous.y-vertex.y)+vertex.x;
++            if(point.x<crossing)inside=!inside;
++        }
++        previous=vertex;
++    }
++    return inside?closest:-closest;
++}
++float sony_regular_polygon(vec2 point,vec2 scale,int count) {
++    vec2 q=point/scale;float radius=length(q);if(radius<1e-7)return min(scale.x,scale.y);
++    float step=6.283185307/float(count),angle=atan(q.x,-q.y);
++    float sector=floor(angle/step),closest=1e10;
++    for(int i=-1;i<=1;++i){float a=(sector+float(i))*step,b=a+step;
++        closest=min(closest,sony_segment_distance(point,vec2(sin(a),-cos(a))*scale,vec2(sin(b),-cos(b))*scale));
++    }
++    float normal=mod(angle,step)-step*.5;
++    bool inside=radius*cos(normal)<=cos(step*.5);
++    return inside?closest:-closest;
++}
++float sony_angular(vec2 q,float start,float sweep) {
++    float angle=mod(atan(q.x,-q.y)-start+6.283185307,6.283185307);
++    vec2 first=vec2(sin(start),-cos(start)),last=vec2(sin(start+sweep),-cos(start+sweep));
++    float d=min(length(q-first*max(dot(q,first),0.0)),length(q-last*max(dot(q,last),0.0)));
++    return angle<=sweep?d:-d;
++}
+ float sony_distance(vec2 p, float t, float cell_aspect)
+ {
+-    vec2 q = p - sony_center;
+-    vec2 extent = max(sony_center, vec2(1.0) - sony_center);
+-    float ar = max(sony_aspect, 0.01);
+-    // Distances are measured in cell-height units, not normalized screen X/Y.
+-    // At neutral ASPECT the iris remains round/square in displayed pixels.
+-    q.x *= cell_aspect / ar;
+-    extent.x *= cell_aspect / ar;
+-    if (sony_code == 1) return t - p.x;
+-    if (sony_code == 2) return t - (1.0-p.x);
+-    if (sony_code == 3) return t - p.y;
+-    if (sony_code == 4) return t - (1.0-p.y);
+-    if (sony_code == 5) return t - max(p.x, p.y);
+-    if (sony_code == 6) return t - max(1.0-p.x, p.y);
+-    if (sony_code == 7) return t - max(1.0-p.x, 1.0-p.y);
+-    if (sony_code == 8) return t - max(p.x, 1.0-p.y);
+-    if (sony_code == 10) return (2.0*t-(1.0-p.x)-p.y) / sqrt(2.0);
+-    if (sony_code == 11) return (2.0*t-(1.0-p.x)-(1.0-p.y)) / sqrt(2.0);
+-    if (sony_code == 12) return (2.0*t-p.x-(1.0-p.y)) / sqrt(2.0);
+-    if (sony_code == 22) return max(t*extent.x-abs(q.x), t*extent.y-abs(q.y));
+-    if (sony_code == 9) return (2.0*t-p.x-p.y) / sqrt(2.0);
+-    if (sony_code == 17) return t*extent.x - abs(q.x);
+-    if (sony_code == 18) return t*extent.y - abs(q.y);
+-    if (sony_code == 21) return t*max(extent.x, extent.y)-max(abs(q.x),abs(q.y));
+-    if (sony_code == 23) return (t*(extent.x+extent.y)-abs(q.x)-abs(q.y))/sqrt(2.0);
+-    return t*length(extent)-length(q); // Sony 24: circular/elliptical iris
++    vec2 q=p-sony_center,extent=max(sony_center,vec2(1)-sony_center);
++    float ar=max(sony_aspect,.01),raster=max(cell_aspect,.01),sx=ar*raster;
++    vec2 physical=vec2(q.x*raster,q.y),normal=vec2(q.x/ar,q.y),bounds=vec2(extent.x/ar,extent.y);
++    if(sony_code==1)return (t-p.x)*raster;
++    if(sony_code==2)return (t-(1-p.x))*raster;
++    if(sony_code==3)return t-p.y;
++    if(sony_code==4)return t-(1-p.y);
++    if((sony_code>=5&&sony_code<=8)||(sony_code>=300&&sony_code<=303)){
++        int corner=sony_code>=300?sony_code-300:sony_code-5;
++        vec2 point=vec2(corner==1||corner==2?1-p.x:p.x,corner>=2?1-p.y:p.y);point.x*=raster;
++        float rounding=sony_code>=300?sony_rounding:0.0;
++        float size=t*max(1/ar,1.0)*(1+rounding*.414213562);
++        vec2 box=vec2(size*sx,size);float radius=rounding*min(box.x,box.y),extension=max(raster,1.0);
++        return sony_round_box(point-(box-vec2(extension))*.5,(box+vec2(extension))*.5,radius);
++    }
++    if(sony_code>=9&&sony_code<=12){
++        vec2 point=vec2(sony_code==10||sony_code==11?1-p.x:p.x,sony_code>=11?1-p.y:p.y);
++        return (t*(1/ar+1.0)-point.x/ar-point.y)/sqrt(1/(sx*sx)+1.0);
++    }
++    if(sony_code>=13&&sony_code<=16){
++        bool horizontal=sony_code<=14;float distance=horizontal?(sony_code==13?p.x:1-p.x)/ar:(sony_code==15?p.y:1-p.y);
++        float spread=horizontal?abs(q.y)/max(extent.y,1e-5):abs(q.x)/max(extent.x,1e-5);
++        float travel=horizontal?1/ar:1.0;
++        float gx=horizontal?1/sx:1/(max(extent.x,1e-5)*raster),gy=horizontal?1/max(extent.y,1e-5):1.0;
++        return (t*(travel+1.0)-distance-spread)/length(vec2(gx,gy));
++    }
++    if(sony_code==17)return (t*extent.x-abs(q.x))*raster;
++    if(sony_code==18)return t*extent.y-abs(q.y);
++    if(sony_code==19)return (t*(.5/ar+1.0)-min(p.x,1-p.x)/ar-abs(q.y)/max(extent.y,1e-5))/length(vec2(1/sx,1/max(extent.y,1e-5)));
++    if(sony_code==20)return (t*(.5+1.0)-min(p.y,1-p.y)-abs(q.x)/max(extent.x,1e-5))/length(vec2(1/(max(extent.x,1e-5)*raster),1));
++    if(sony_code==21||sony_code==304){
++        float rounding=sony_code==304?sony_rounding:0.0;
++        float radius=t*max(bounds.x,bounds.y)*(1+rounding*.414213562);vec2 half_size=vec2(radius*sx,radius);
++        return sony_round_box(physical,half_size,rounding*min(half_size.x,half_size.y));
++    }
++    if(sony_code==22)return max((t*extent.x-abs(q.x))*raster,t*extent.y-abs(q.y));
++    if(sony_code==23)return (t*(bounds.x+bounds.y)-abs(normal.x)-abs(normal.y))/sqrt(1/(sx*sx)+1);
++    if(sony_code==24){vec2 metric=vec2(q.x*raster/ar,q.y),full=vec2(extent.x*raster/ar,extent.y);return (t*length(full)-length(metric))/max(1.0,1/ar);}
++    if(sony_code==26){
++        vec2 figure=vec2(q.x*raster/ar,q.y),full=vec2(extent.x*raster/ar,extent.y);float radius=max(t,1e-5)*1.6*length(full);vec2 h=figure/radius;h.y=-h.y;
++        float a=dot(h,h)-1.0,f=a*a*a-h.x*h.x*h.y*h.y*h.y;
++        vec2 gradient=vec2(6*h.x*a*a-2*h.x*h.y*h.y*h.y,6*h.y*a*a-3*h.x*h.x*h.y*h.y);
++        return -f*radius/max(length(vec2(gradient.x/ar,gradient.y)),1e-5);
++    }
++    if(sony_code==27||sony_code==29){float radius=max(t,1e-5)*length(vec2(extent.x*raster/ar,extent.y))*(sony_code==27?4.2:5.1);return sony_polygon(physical,vec2(radius*ar,radius),sony_code==27);}
++    if(sony_code==49){float radius=max(t,1e-5)*length(vec2(extent.x*raster/ar,extent.y))/cos(3.141592654/float(sony_vertices));return sony_regular_polygon(physical,vec2(radius*ar,radius),sony_vertices);}
++    if(sony_code>=100&&sony_code<=103){
++        int corner=sony_code-100;
++        vec2 point=corner==0?vec2(p.x,1-p.y):corner==1?p:corner==2?vec2(1-p.x,p.y):vec2(1)-p;
++        if(corner==1||corner==3)point=point.yx;
++        point.x*=raster/ar;
++        float angle=atan(point.x,point.y),edge=t*1.570796327;
++        return length(point)*sin(edge-angle);
++    }
++    if(sony_code>=104&&sony_code<=107)return sony_angular(vec2(q.x*raster/ar,q.y),float(sony_code-104)*1.570796327,t*6.283185307);
++    return -1.0;
+ }
+ 
+ float sony_coverage(float distance, float softness)
+@@ -602,7 +683,7 @@ void main()
+     }
+     if(dme_lighting) {
+         float light=TexCoord.z/TexCoord.q;
+-        if(light<0.0)color.rgb=vec3(.92)*(is_straight_alpha?1.0:color.a);
++        // The back face samples the same live texture; mesh orientation mirrors it.
+         color.rgb*=clamp(abs(light),.0,1.0);
+     }
+     if (is_straight_alpha)
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 39e898a4f952d339c155a7939d571a5fdd6c8cfc..ac39a106c48515b621e90c028ed94c6f71bc03fa 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.7.1
++0.9.0
+diff --git a/src/core/frame/frame_transform.cpp b/src/core/frame/frame_transform.cpp
+index 6b63ee65caae18eba894149a48293d04053eea04..d9194b75e1c5e0b9e7089f740c4f61960eb1c85e 100644
+--- a/src/core/frame/frame_transform.cpp
++++ b/src/core/frame/frame_transform.cpp
+@@ -133,7 +133,7 @@ bool operator==(const rectangle& lhs, const rectangle& rhs)
+ bool operator==(const sony_wipe& lhs, const sony_wipe& rhs)
+ {
+     return lhs.code == rhs.code && lhs.role == rhs.role && eq(lhs.progress, rhs.progress) && eq(lhs.soft, rhs.soft) &&
+-        eq(lhs.border, rhs.border) && eq(lhs.aspect, rhs.aspect) && lhs.multi == rhs.multi &&
++        eq(lhs.border, rhs.border) && eq(lhs.aspect, rhs.aspect) && lhs.multi == rhs.multi && lhs.vertices==rhs.vertices && eq(lhs.rounding,rhs.rounding) &&
+         eq(lhs.x, rhs.x) && eq(lhs.y, rhs.y) && lhs.reverse == rhs.reverse;
+ }
+ 
+diff --git a/src/core/frame/frame_transform.h b/src/core/frame/frame_transform.h
+index 800083eb1577426d6c3199fcb1cfecf485d5242b..5f6af201842743a378e89f3aa006780035273312 100644
+--- a/src/core/frame/frame_transform.h
++++ b/src/core/frame/frame_transform.h
+@@ -83,6 +83,8 @@ struct sony_wipe final
+     double border = 0.0;
+     double aspect = 1.0;
+     int multi = 1;
++    int vertices = 5;
++    double rounding = 15.0;
+     double x = 0.5;
+     double y = 0.5;
+     bool reverse = false;
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+index 5b6377c5e783eaf667e2b5b5a79470fa3f75dd87..531afb346d99b979afa2ba191fc64ace5c817166 100644
+--- a/src/core/producer/wipe/dme_producer.cpp
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -26,6 +26,7 @@ struct pose
+     std::array<double, 4> fill{0, 0, 1, 1}, clip{0, 0, 1, 1}, crop{0, 0, 1, 1};
+     double                opacity = 1, volume = 0;
+     double                order = 0;
++    std::array<double,8> perspective{0,0,1,0,1,1,0,1};
+ };
+ pose read_pose(const tree& t)
+ {
+@@ -43,6 +44,7 @@ pose read_pose(const tree& t)
+     rect("fill", p.fill);
+     rect("clip", p.clip);
+     rect("crop", p.crop);
++    if(auto corners=t.get_child_optional("perspective")){if(corners->size()!=8)CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"MOVE perspective requires eight coordinates"));unsigned index=0;for(const auto& point:*corners)p.perspective[index++]=bounded(point.second.get_value<double>(),-10000,10000);}
+     p.opacity = bounded(t.get<double>("opacity"), 0, 1);
+     p.volume  = bounded(t.get<double>("volume"), 0, 1);
+     p.order   = bounded(t.get<double>("order", 0), -1, 32);
+@@ -59,6 +61,7 @@ pose interpolate(const pose& a, const pose& b, double t)
+     p.opacity = a.opacity + (b.opacity - a.opacity) * t;
+     p.volume  = a.volume + (b.volume - a.volume) * t;
+     p.order   = a.order + (b.order - a.order) * t;
++    for(unsigned i=0;i<8;++i)p.perspective[i]=a.perspective[i]+(b.perspective[i]-a.perspective[i])*t;
+     return p;
+ }
+ void apply(draw_frame& f, const pose& p)
+@@ -71,6 +74,7 @@ void apply(draw_frame& f, const pose& p)
+     x.clip_scale                = {p.clip[2], p.clip[3]};
+     x.crop.ul                   = {p.crop[0], p.crop[1]};
+     x.crop.lr                   = {p.crop[0] + p.crop[2], p.crop[1] + p.crop[3]};
++    x.perspective.ul={p.perspective[0],p.perspective[1]};x.perspective.ur={p.perspective[2],p.perspective[3]};x.perspective.lr={p.perspective[4],p.perspective[5]};x.perspective.ll={p.perspective[6],p.perspective[7]};
+     x.opacity *= p.opacity;
+     f.transform().audio_transform.volume *= p.volume;
+ }
+diff --git a/src/core/producer/wipe/sony_wipe_producer.cpp b/src/core/producer/wipe/sony_wipe_producer.cpp
+index 648123cb5713238c95034ca46b5959d1bacb6991..55f2a3b88486f3d55779a30914497ff005db41c3 100644
+--- a/src/core/producer/wipe/sony_wipe_producer.cpp
++++ b/src/core/producer/wipe/sony_wipe_producer.cpp
+@@ -42,6 +42,8 @@ class sony_wipe_producer final : public frame_producer
+             else if (key == L"SOFT") next.soft = number(value,0,100);
+             else if (key == L"BORDER") next.border = number(value,0,100);
+             else if (key == L"ASPECT") next.aspect = number(value,0.01,1000);
++            else if(key==L"ROUNDING") next.rounding=number(value,0,50);
++            else if(key==L"VERTICES"){auto count=number(value,3,64);if(count!=std::floor(count))CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"VERTICES must be an integer"));next.vertices=int(count);}
+             else if (key == L"MULTI") {
+                 auto count = number(value,1,16);
+                 if (count != std::floor(count) || (count!=1 && count!=2 && count!=4 && count!=9 && count!=16))
+@@ -248,7 +250,7 @@ spl::shared_ptr<frame_producer> create_sony_wipe_producer(
+     const auto text = params[0].substr(12);
+     size_t end = 0;
+     const auto code = std::stoi(text, &end);
+-    if (end != text.size() || (!(code>=1 && code<=12) && code!=17 && code!=18 && code!=21 && code!=22 && code!=23 && code!=24))
++    if (end != text.size() || (!(code>=1 && code<=24) && code!=26 && code!=27 && code!=29 && code!=49 && !(code>=100&&code<=107) && !(code>=300&&code<=304)))
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unsupported Sony wipe pattern"));
+     return spl::make_shared<sony_wipe_producer>(dependencies, code,
+         std::vector<std::wstring>(params.begin()+1,params.end()));

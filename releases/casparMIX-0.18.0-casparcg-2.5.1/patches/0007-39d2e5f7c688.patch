@@ -1,0 +1,7 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 6e8bf73aa550d4c57f6f35830f1bcdc7a4a62f38..0ea3a944b399d25f7e1b8fe684d754eb8da9fe7f 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.1.0
++0.2.0

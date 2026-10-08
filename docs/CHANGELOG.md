@@ -1,3 +1,11 @@
+## 0.18.0 — CasparCG 2.5.1 stable
+
+* Correct operator-reviewed Sony 1041–1044 to far-side hinged entry, and assign
+  their former near-side entry to 1045–1048 (issue #9).
+* Validate textured projection in NORM/REV, both endpoints and pixel-identical
+  rendered program/multiview captures for all eight presets.
+* No added dependencies. Historical release patches remain unchanged.
+
 # Changelog
 
 ## 0.17.1 — CasparCG 2.5.1 stable

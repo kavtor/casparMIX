@@ -302,10 +302,10 @@ The video operators assume full-frame background signals. Generic `MIXER
 BLEND NAM` and `SUPER_MIX` use the same pixel operations. `REVERSE` applies
 the producer's usual swap/time-reversal policy.
 
-### Centre doors and flip/tumble (0.12.0)
+### Flip/tumble (0.12.0)
 
-`SONY_1045` through `SONY_1048` projects incoming B around an interior
-vertical/horizontal centre hinge, over A. `SONY_1101`/`1102` rotates the picture
+The original interpretation of 1045–1048 was corrected in 0.18.0 (see below).
+`SONY_1101`/`1102` rotates the picture
 around its vertical/horizontal centre axis through half a turn: A is visible
 before midpoint and B afterwards. The edge-on face disappears over the prepared
 background. `1103`/`1104` also vary scale; `1121`/`1122` rotates in the opposite
@@ -409,3 +409,12 @@ Sony's multi-stage Frame I/O/key preparation and dead bands are not simulated.
 Sony 1011–1013 use operator-confirmed NORM entry and REV exit. Only those
 presets invert the earlier default; A/B endpoints and ordinary linear audio
 crossfade remain unchanged. Other Sony primitives retain their direction.
+
+### Far/near edge-hinged entry correction (0.18.0)
+
+`SONY_1041`–`SONY_1044` unfold incoming B from the far side towards its full-screen
+position, with left, right, top and bottom edge pivots respectively.
+`SONY_1045`–`SONY_1048` use the same pivots from the near side, retaining the former
+1041–1044 trajectory. `REVERSE` retraces the selected geometry. This replaces the
+incorrect centre-axis interpretation of 1045–1048. Sources, endpoints and audio
+crossfade policy are unchanged.

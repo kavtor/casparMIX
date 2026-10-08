@@ -1,0 +1,64 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 0c62199f16ac1e2d7f7ae75b420c1231325dff4e..ee1372d33a29e27945406f0527f8af8e6ee119c9 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.2.1
++0.2.2
+diff --git a/src/core/mixer/mixer.cpp b/src/core/mixer/mixer.cpp
+index b676f5f08821afbb881e62610a85f391834b21e3..e9bb76aa9866b81bf4f4c7bdd9a405b24320c647 100644
+--- a/src/core/mixer/mixer.cpp
++++ b/src/core/mixer/mixer.cpp
+@@ -111,6 +111,17 @@ struct mixer::impl
+         state_["audio"] = audio_mixer_.state();
+     }
+ 
++    void discard_pending_frames()
++    {
++        // A channel can remain alive for raw routes/audio metering while image
++        // rendering is idle. Never publish its old pipeline head on resumption.
++        while (!buffer_.empty()) {
++            auto pending = std::move(buffer_.front());
++            buffer_.pop();
++            pending.get();
++        }
++    }
++
+     void set_master_volume(float volume) { audio_mixer_.set_master_volume(volume); }
+ 
+     float get_master_volume() { return audio_mixer_.get_master_volume(); }
+@@ -131,6 +142,8 @@ void mixer::meter_audio(const std::vector<draw_frame>& frames, const video_forma
+     impl_->meter_audio(frames, format_desc, nb_samples);
+ }
+ 
++void mixer::discard_pending_frames() { impl_->discard_pending_frames(); }
++
+ mutable_frame mixer::create_frame(const void* tag, const pixel_format_desc& desc)
+ {
+     return impl_->image_mixer_->create_frame(tag, desc);
+diff --git a/src/core/mixer/mixer.h b/src/core/mixer/mixer.h
+index 7176d45c89f08b0061ed0929e1b3c3e61493d3f7..78dfb4bf6074a262201e895ea86fe684a7e56702 100644
+--- a/src/core/mixer/mixer.h
++++ b/src/core/mixer/mixer.h
+@@ -47,6 +47,9 @@ class mixer final
+ 
+     void meter_audio(const std::vector<draw_frame>& frames, const video_format_desc& format_desc, int nb_samples);
+ 
++    // Drop completed work when the channel has no image output demand.
++    void discard_pending_frames();
++
+     void  set_master_volume(float volume);
+     float get_master_volume();
+ 
+diff --git a/src/core/video_channel.cpp b/src/core/video_channel.cpp
+index 3e21072025252fc77ef6d0862adff8930ba9261a..9108332a55aceb196aba7d1c2f59d0c6af49083b 100644
+--- a/src/core/video_channel.cpp
++++ b/src/core/video_channel.cpp
+@@ -185,6 +185,7 @@ struct video_channel::impl final
+ 
+                     // Audio metering does not require a full-frame video render.
+                     if (!needs_render) {
++                        mixer_.discard_pending_frames();
+                         mixer_.meter_audio(stage_frames.frames, stage_frames.format_desc, stage_frames.nb_samples);
+                         if (stage_frames.format_desc.field_count == 2)
+                             mixer_.meter_audio(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples);
