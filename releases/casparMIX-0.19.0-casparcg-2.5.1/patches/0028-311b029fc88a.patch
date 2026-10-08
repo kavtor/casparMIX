@@ -1,0 +1,145 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index a602fc9e283389306d606c164ce73ac338999373..78bc1abd14f2c1f6330989d876c4ee7d5daf7ff6 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.9.4
++0.10.0
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+index 531afb346d99b979afa2ba191fc64ace5c817166..ea7aa5c041df52ca2a159cc8fbfc4a0fe5222483 100644
+--- a/src/core/producer/wipe/dme_producer.cpp
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -1,5 +1,6 @@
+ // Additive native DME primitives. No CPU video readback or external render loop.
+ #include "dme_producer.h"
++#include "sony_dme_catalogue.h"
+ #include <algorithm>
+ #include <boost/algorithm/string.hpp>
+ #include <boost/property_tree/json_parser.hpp>
+@@ -132,6 +133,70 @@ std::wstring background_spec(const std::wstring& hex)
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid DME background producer"));
+     return u16(value);
+ }
++// Reviewed one/two-channel Sony primitives. Remaining catalogue IDs are not
++// accepted until their texture roles and multi-stage geometry are resolved.
++bool sony_primitive(int code) { return sony_dme::implemented(code); }
++
++draw_frame sony_primitive_frame(int code,draw_frame a,draw_frame b,double t,bool reverse,double aspect) {
++    if(reverse){std::swap(a,b);t=1-t;}
++    const int index=(code%100)-1;
++    const std::array<std::array<double,2>,8> entry{{{-1,0},{1,0},{0,-1},{0,1},{-1,-1},{1,-1},{1,1},{-1,1}}};
++    if((code>=1001&&code<=1008)||(code>=2601&&code<=2608)){
++        const auto v=entry[index];auto& incoming=b.transform().image_transform;
++        incoming.enable_geometry_modifiers=true;incoming.fill_translation={v[0]*(1-t),v[1]*(1-t)};
++        if(code>=2601){auto& outgoing=a.transform().image_transform;outgoing.enable_geometry_modifiers=true;outgoing.fill_translation={-v[0]*t,-v[1]*t};}
++        return draw_frame::over(a,b);
++    }
++    if((code>=1021&&code<=1031)||(code>=2621&&code<=2628)){
++        const int i=code%100-21;const auto v=i<8?entry[i]:std::array<double,2>{0,0};
++        const bool horizontal=i==8||i==10||v[0]!=0,vertical=i==9||i==10||v[1]!=0;
++        auto& incoming=b.transform().image_transform;incoming.enable_geometry_modifiers=true;
++        incoming.fill_scale={horizontal?t:1,vertical?t:1};
++        incoming.fill_translation={horizontal?(v[0]<0?0:v[0]>0?1-t:(1-t)/2):0,vertical?(v[1]<0?0:v[1]>0?1-t:(1-t)/2):0};
++        if(code>=2621){auto& outgoing=a.transform().image_transform;outgoing.enable_geometry_modifiers=true;outgoing.fill_scale={horizontal?1-t:1,vertical?1-t:1};outgoing.fill_translation={horizontal?(v[0]<0?t:0):0,vertical?(v[1]<0?t:0):0};}
++        return draw_frame::over(a,b);
++    }
++    if(code>=1011&&code<=1013){
++        std::vector<draw_frame> pieces;const int count=code==1013?4:2;
++        for(int i=0;i<count;++i){auto piece=draw_frame::push(a);auto& x=piece.transform().image_transform;x.enable_geometry_modifiers=true;
++            const bool horizontal=code!=1012,vertical=code!=1011;
++            const bool right=code==1013?(i%2)!=0:i!=0,bottom=code==1013?i>=2:i!=0;
++            const double dx=horizontal?(right?.5*t:-.5*t):0,dy=vertical?(bottom?.5*t:-.5*t):0;
++            x.fill_translation={dx,dy};x.clip_translation={(horizontal&&right?.5:0)+dx,(vertical&&bottom?.5:0)+dy};x.clip_scale={horizontal?.5:1,vertical?.5:1};
++            // The video is split into multiple draws, not multiple audio feeds.
++            if(i>0)piece.transform().audio_transform.volume=0;
++            pieces.push_back(std::move(piece));
++        }
++        auto result=b;for(auto& piece:pieces)result=draw_frame::over(result,piece);return result;
++    }
++    if(code==1384||code==1385){
++        auto result=a;constexpr int strips=16;
++        for(int i=0;i<strips;++i){auto piece=draw_frame::push(b);auto& x=piece.transform().image_transform;x.enable_geometry_modifiers=true;
++            const double offset=(i%2?1:-1)*(1-t),start=double(i)/strips;
++            const bool horizontal=code==1384;
++            x.fill_translation={horizontal?offset:0,horizontal?0:offset};
++            x.clip_translation={horizontal?offset:start,horizontal?start:offset};
++            x.clip_scale={horizontal?1:1.0/strips,horizontal?1.0/strips:1};
++            if(i>0)piece.transform().audio_transform.volume=0;
++            result=draw_frame::over(result,piece);
++        }
++        return result;
++    }
++    // Four edge-hinged doors: live texture is projected, never masked in place.
++    const int i=code-1041;const bool horizontal=i<2;const double hinge=i==1||i==3?1:0;
++    const double angle=(1-t)*1.5707963267948966,camera=3.5;
++    auto& x=b.transform().image_transform;x.enable_geometry_modifiers=true;
++    std::array<double,2>* corners[]={&x.perspective.ul,&x.perspective.ur,&x.perspective.lr,&x.perspective.ll};
++    const double xs[]={0,1,1,0},ys[]={0,0,1,1};
++    for(int point=0;point<4;++point){double px=(xs[point]-.5)*aspect,py=ys[point]-.5;
++        const double offset=(horizontal?xs[point]:ys[point])-hinge;
++        const double z=std::abs(offset)*(horizontal?aspect:1)*std::sin(angle);
++        if(horizontal)px=((hinge-.5)+offset*std::cos(angle))*aspect;
++        else py=(hinge-.5)+offset*std::cos(angle);
++        const double scale=camera/(camera-z);*corners[point]={.5+px*scale/aspect,.5+py*scale};
++    }
++    return draw_frame::over(a,b);
++}
+ class dme_transition final : public frame_producer
+ {
+     struct track
+@@ -145,6 +210,7 @@ class dme_transition final : public frame_producer
+     spl::shared_ptr<frame_producer> destination_, source_ = frame_producer::empty();
+     std::vector<track>              tracks_;
+     std::wstring                    effect_;
++    int sony_code_=0;
+     int                             duration_, current_ = 0;
+     bool                            manual_, reverse_, ready_ = false;
+     double                          progress_ = 0;
+@@ -168,6 +234,7 @@ class dme_transition final : public frame_producer
+         , manual_(manual)
+         , reverse_(reverse)
+     {
++        if(effect_.find(L"SONY_")==0)sony_code_=std::stoi(effect_.substr(5));
+         if (!backdrop.empty())
+             background_ = deps.producer_registry->create_producer(deps, producer_args(background_spec(backdrop)));
+         if (effect_ != L"MOVE")
+@@ -269,7 +336,8 @@ class dme_transition final : public frame_producer
+                 in  = draw_frame::push(in);
+                 out.transform().audio_transform.volume *= 1 - progress_;
+                 in.transform().audio_transform.volume *= progress_;
+-                if (effect_ == L"PAGE_CURL" || effect_ == L"PAGE_ROLL") {
++                if(sony_code_){result=sony_primitive_frame(sony_code_,out,in,progress_,reverse_,double(deps_.format_desc.square_width)/deps_.format_desc.square_height);}
++                else if (effect_ == L"PAGE_CURL" || effect_ == L"PAGE_ROLL") {
+                     auto& surface    = (effect_ == L"PAGE_ROLL" ? in : out).transform().image_transform.surface;
+                     surface.mode     = effect_ == L"PAGE_CURL" ? 1 : 2;
+                     surface.progress = effect_ == L"PAGE_ROLL" ? 1 - progress_ : progress_;
+@@ -366,7 +434,9 @@ spl::shared_ptr<frame_producer> create_dme_transition(const frame_producer_depen
+             if (used != params[i + 1].size() || duration < 1 || duration > 10000)
+                 CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid DME duration"));
+             auto effect = boost::to_upper_copy(params[i + 2]);
+-            if (effect != L"MOVE" && effect != L"CUBE" && effect != L"ZOOM" && effect != L"PAGE_CURL" &&
++            bool sony=false;
++            if(effect.find(L"SONY_")==0){size_t end=0;auto code=std::stoi(effect.substr(5),&end);sony=end==effect.size()-5&&sony_primitive(code);if(!sony&&sony_dme::reserved(code))CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Sony DME preset pending implementation"));}
++            if (!sony && effect != L"MOVE" && effect != L"CUBE" && effect != L"ZOOM" && effect != L"PAGE_CURL" &&
+                 effect != L"PAGE_ROLL" && effect != L"PUSH_LEFT" && effect != L"PUSH_RIGHT" && effect != L"PUSH_TOP" &&
+                 effect != L"PUSH_BOTTOM" && effect != L"SLIDE_LEFT" && effect != L"SLIDE_RIGHT" &&
+                 effect != L"SLIDE_TOP" && effect != L"SLIDE_BOTTOM")
+diff --git a/src/core/producer/wipe/sony_dme_catalogue.h b/src/core/producer/wipe/sony_dme_catalogue.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..0258910f91cba41e0f40745583868c0b3f9d279b
+--- /dev/null
++++ b/src/core/producer/wipe/sony_dme_catalogue.h
+@@ -0,0 +1,13 @@
++#pragma once
++#include <array>
++#include <algorithm>
++
++namespace caspar::core::sony_dme {
++// IDs from the operator-supplied union of the DVS/XVS preset catalogues.
++// TODO: unresolved IDs are reserved; detailed reasons accompany the review
++// inventory in Strata. They must never execute a substituted primitive.
++inline constexpr std::array<int,269> known{1001,1002,1003,1004,1005,1006,1007,1008,1011,1012,1013,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1041,1042,1043,1044,1045,1046,1047,1048,1051,1052,1053,1054,1055,1056,1057,1058,1061,1062,1063,1064,1068,1071,1072,1074,1076,1077,1088,1091,1092,1093,1094,1101,1102,1103,1104,1109,1110,1121,1122,1124,1131,1132,1133,1135,1201,1202,1203,1204,1205,1206,1207,1208,1209,1221,1222,1223,1224,1225,1251,1301,1302,1303,1304,1305,1306,1307,1308,1309,1310,1311,1312,1313,1315,1316,1317,1318,1321,1322,1323,1324,1325,1326,1327,1328,1329,1330,1331,1332,1333,1335,1336,1337,1338,1341,1342,1343,1344,1345,1346,1347,1348,1349,1350,1355,1356,1357,1358,1365,1371,1372,1378,1379,1381,1384,1385,1386,1387,1388,1389,1391,1393,1394,1396,1398,1399,1701,1702,2601,2602,2603,2604,2605,2606,2607,2608,2621,2622,2623,2624,2625,2626,2627,2628,2631,2632,2633,2634,2642,2644,2651,2652,2661,2662,2701,2702,2703,2704,2705,2706,2707,2708,2709,2710,2711,2712,2713,2715,2716,2717,2718,2721,2722,2723,2724,2725,2726,2727,2728,2729,2730,2731,2732,2733,2735,2736,2737,2738,2741,2742,2743,2744,2745,2746,2747,2748,2749,2750,2801,2802,2803,2804,2811,2812,2813,2814,2851,2852,2853,2854,2861,2862,2863,2864,3601,7001,7002,7003,7004,7005,7006,7007,7008,7021,7022,7023,7024,7025,7026,7027,7028,7029,7030,7031,7201,7202,7203,7204,7205,7206,7207,7208,7221,7222,7223,7224};
++inline constexpr std::array<int,44> ready{1001,1002,1003,1004,1005,1006,1007,1008,1011,1012,1013,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1041,1042,1043,1044,1384,1385,2601,2602,2603,2604,2605,2606,2607,2608,2621,2622,2623,2624,2625,2626,2627,2628};
++inline bool implemented(int code){return std::binary_search(ready.begin(),ready.end(),code);}
++inline bool reserved(int code){return std::binary_search(known.begin(),known.end(),code);}
++}

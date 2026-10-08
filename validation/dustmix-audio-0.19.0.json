@@ -1,0 +1,15 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.19.0)",
+  "dustmix-0.25": {
+    "b_over_a_amplitude": 0.33333122419747463,
+    "expected": 0.3333333333333333
+  },
+  "dustmix-0.5": {
+    "b_over_a_amplitude": 1.0000142792040978,
+    "expected": 1.0
+  },
+  "dustmix-0.75": {
+    "b_over_a_amplitude": 3.0000375670311836,
+    "expected": 3.0
+  }
+}

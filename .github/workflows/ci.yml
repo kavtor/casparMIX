@@ -8,4 +8,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 -m compileall -q tools
-      - run: python3 tools/verify_release.py --release releases/casparMIX-0.18.2-casparcg-2.5.1
+      - run: python3 tools/verify_release.py --release releases/casparMIX-0.19.0-casparcg-2.5.1

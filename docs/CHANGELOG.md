@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.0 — CasparCG 2.5.1 stable
+
+* Add native DUSTMIX with ratio, independent particle H/V size and reproducible
+  progress-indexed flash steps. Video masks stay complementary; audio uses one
+  ordinary crossfade, independent of particle visibility (issue #19).
+* Add centered/inner/outer wipe border placement and independent inner/outer
+  softness on the same frame-local distance field (issue #20).
+* Captures verify PGM/rendered MV RGB identity, endpoints, same-picture continuity,
+  rewind, ratio-zero dissolve, live preparation and atomic invalid rejection.
+* Existing symmetric defaults remain unchanged. No new dependencies.
+
+
 ## 0.18.2 — CasparCG 2.5.1 stable
 
 * Correct Sony mosaic 269 origin from lower-right to upper-right (issue #17).
