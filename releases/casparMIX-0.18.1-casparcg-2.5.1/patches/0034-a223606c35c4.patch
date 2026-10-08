@@ -1,0 +1,32 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index a803cc227fe6ff1fbb6dcfc2dde3e4ccc450257e..930e3000bdc9aaa03a5a26831c271dd32d494f61 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.14.0
++0.14.1
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+index a8926a00b653f34a442e783d41b0a53fdf81721f..ef603df2a97739c751e411773c4bbafdc2b9f486 100644
+--- a/src/core/producer/wipe/dme_producer.cpp
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -190,11 +190,17 @@ draw_frame sony_primitive_frame(int code,draw_frame a,draw_frame b,double t,bool
+         // All distances use physical raster units, so rotation never stretches.
+         const double pi=3.14159265358979323846;
+         double pivotX=.5,pivotY=.5,centerX=.5,centerY=.5,angle=0;
+-        if(code<=1058){const std::array<std::array<double,2>,4> pivots{{{0,0},{1,0},{1,1},{0,1}}};
+-            const bool clockwise=code<=1054;const int phase=clockwise?code-1051:3-(code-1055);
++        if(code<=1058){const std::array<std::array<double,2>,4> pivots{{{0,1},{0,0},{1,0},{1,1}}};
++            const bool clockwise=code<=1054;const int phase=clockwise?code-1051:code-1055;
+             pivotX=centerX=pivots[phase][0];pivotY=centerY=pivots[phase][1];angle=(clockwise?-1:1)*(1-t)*pi/2;
+         }else if(code==1068){centerY=1-t/2;angle=-(1-t)*2*pi;}
+-        else {const bool right=code==1061||code==1064;centerX=.5+(right?.5:-.5)*(1-t);angle=(code==1061||code==1063?-1:1)*(1-t)*pi/2;}
++        else {
++            // The side-centre of B starts on the indicated corner of A, then
++            // moves to its own full-frame side-centre as the incoming plane grows.
++            const bool right=code==1062||code==1063,bottom=code==1063||code==1064;
++            pivotX=centerX=right?1:0;pivotY=.5;centerY=bottom?1-t/2:t/2;
++            angle=(code==1061||code==1063?1:-1)*(1-t)*pi/2;
++        }
+         auto& x=b.transform().image_transform;x.enable_geometry_modifiers=true;
+         std::array<double,2>* corners[]={&x.perspective.ul,&x.perspective.ur,&x.perspective.lr,&x.perspective.ll};
+         const double xs[]={0,1,1,0},ys[]={0,0,1,1};

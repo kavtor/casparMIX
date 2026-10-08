@@ -1,4 +1,34 @@
-# Native Sony catalogue expansion (0.7.0)
+# Sony catalogue
+
+## Current operator morphology review (2026-10-08)
+
+* Standard Wipes 1–24: operator-approved morphology.
+* Enhanced Wipes 29, 300–304: operator-approved morphology.
+* Enhanced Wipes 26, 27 and 49: operator requested lower centering; corrected
+  in 0.18.1 and awaiting operator recheck.
+* Rotary 150, 151, 604 and 606: operator requested opening rather than closing
+  the central wedge. Corrected in 0.18.1, awaiting operator recheck.
+* This review covers morphology only, not modifier behavior or every time curve.
+
+For 26, the implicit heart's vertical extrema are -1 and 1.236659170 before
+screen inversion. For 27, the star extrema are -1 and cos(pi/5). Polygon 49
+has extrema -1 and cos(pi/N) for odd N, and symmetric extrema for even N.
+The renderer compensates half of each asymmetric span in shape-local units,
+scaled with progress. POS remains the center of the visible bounds; no global
+origin adjustment is applied to unrelated presets. The existing coverage/time
+laws, ASPCT, SOFT and BORDER operations are retained.
+
+`tools/validate_enhanced_centering.py` checks actual native capture bounds and
+pixel-identical rendered routes. Results: `validation/sony-enhanced-centering-0.18.1.json`.
+
+The four corrected edge fans use an increasing symmetric aperture around the
+center ray. REV retains the complementary reveal; signed-distance SOFT/BORDER
+uses the same rays. `tools/validate_rotary_wipes.py` checks the half-progress
+center-ray pixel explicitly, together with monotonic coverage and PGM/MV identity.
+
+## Release history
+
+### Native Sony catalogue expansion (0.7.0)
 
 The native mask renderer implements Sony WIPE identifiers 1–12, 17, 18 and
 21–24. The ten original panel shortcuts retain their numbers and geometry.
