@@ -96,3 +96,10 @@ Project defaults are explicit: one half-turn, centre pivot, constant angular
 speed, camera 3.5 frame heights away; scaled flips reach 65% at midpoint.
 Complex trajectories, hold bands and unknown multi-stage presets remain
 reserved. 215 DME/Resizer catalogue IDs still require implementation/review.
+
+## Edge-door interpretation correction (0.18.0)
+
+Operator review assigns 1041–1044 to far-side entry and 1045–1048 to near-side
+entry with the same left/right/top/bottom pivots. The previous centre-axis
+interpretation of 1045–1048 is withdrawn. See `validate_sony_door_depth.py` for
+NORM/REV texture and endpoint checks against native program and rendered MV.

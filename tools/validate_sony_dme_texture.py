@@ -52,7 +52,7 @@ with (root/'server.log').open('w') as log:
    else:
     horizontal=code<1043;hinge=1 if code in (1042,1044) else 0;offset=.25-hinge;angle=math.pi/4
     px=(.25-.5)*1280/720;py=.25-.5
-    z=abs(offset)*(1280/720 if horizontal else 1)*math.sin(angle)
+    z=-abs(offset)*(1280/720 if horizontal else 1)*math.sin(angle)
     if horizontal:px=((hinge-.5)+offset*math.cos(angle))*1280/720
     else:py=(hinge-.5)+offset*math.cos(angle)
     scale=3.5/(3.5-z);x=.5+px*scale/(1280/720);y=.5+py*scale

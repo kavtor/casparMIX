@@ -1,0 +1,54 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 4d41c560ffc482053ae4f25fd343314b6321c265..560c887c1b3d8e78d1812397d702fdeb37694f65 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -543,9 +543,17 @@ float sony_distance(vec2 p, float t, float cell_aspect)
+     q.x *= cell_aspect / ar;
+     extent.x *= cell_aspect / ar;
+     if (sony_code == 1) return t - p.x;
++    if (sony_code == 2) return t - (1.0-p.x);
+     if (sony_code == 3) return t - p.y;
++    if (sony_code == 4) return t - (1.0-p.y);
+     if (sony_code == 5) return t - max(p.x, p.y);
+     if (sony_code == 6) return t - max(1.0-p.x, p.y);
++    if (sony_code == 7) return t - max(1.0-p.x, 1.0-p.y);
++    if (sony_code == 8) return t - max(p.x, 1.0-p.y);
++    if (sony_code == 10) return (2.0*t-(1.0-p.x)-p.y) / sqrt(2.0);
++    if (sony_code == 11) return (2.0*t-(1.0-p.x)-(1.0-p.y)) / sqrt(2.0);
++    if (sony_code == 12) return (2.0*t-p.x-(1.0-p.y)) / sqrt(2.0);
++    if (sony_code == 22) return max(t*extent.x-abs(q.x), t*extent.y-abs(q.y));
+     if (sony_code == 9) return (2.0*t-p.x-p.y) / sqrt(2.0);
+     if (sony_code == 17) return t*extent.x - abs(q.x);
+     if (sony_code == 18) return t*extent.y - abs(q.y);
+@@ -567,8 +575,8 @@ float sony_matte(vec2 packed_uv)
+     vec2 p = sony_role == 0 ? vec2(fract(packed_uv.x*2.0), packed_uv.y) : packed_uv;
+     vec2 grid = vec2(1.0);
+     if (sony_multi > 1) {
+-        if (sony_code == 1 || sony_code == 17) grid.x = float(sony_multi);
+-        else if (sony_code == 3 || sony_code == 18) grid.y = float(sony_multi);
++        if (sony_code == 1 || sony_code == 2 || sony_code == 17) grid.x = float(sony_multi);
++        else if (sony_code == 3 || sony_code == 4 || sony_code == 18) grid.y = float(sony_multi);
+         else if (sony_multi == 2) grid.x = 2.0;
+         else grid = vec2(ceil(sqrt(float(sony_multi))));
+     }
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index a918a2aa18d5bec6a8bb93891a7a63c243111796..faef31a4357c48d6e4c55e84c8be8e3bc9055e20 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.6.0
++0.7.0
+diff --git a/src/core/producer/wipe/sony_wipe_producer.cpp b/src/core/producer/wipe/sony_wipe_producer.cpp
+index 28d2de815ca2df5b500c246afd368800b791bb8a..648123cb5713238c95034ca46b5959d1bacb6991 100644
+--- a/src/core/producer/wipe/sony_wipe_producer.cpp
++++ b/src/core/producer/wipe/sony_wipe_producer.cpp
+@@ -248,8 +248,7 @@ spl::shared_ptr<frame_producer> create_sony_wipe_producer(
+     const auto text = params[0].substr(12);
+     size_t end = 0;
+     const auto code = std::stoi(text, &end);
+-    if (end != text.size() || (code!=1 && code!=3 && code!=5 && code!=6 && code!=9 && code!=17 &&
+-        code!=18 && code!=21 && code!=23 && code!=24))
++    if (end != text.size() || (!(code>=1 && code<=12) && code!=17 && code!=18 && code!=21 && code!=22 && code!=23 && code!=24))
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unsupported Sony wipe pattern"));
+     return spl::make_shared<sony_wipe_producer>(dependencies, code,
+         std::vector<std::wstring>(params.begin()+1,params.end()));

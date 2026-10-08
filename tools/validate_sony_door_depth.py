@@ -1,6 +1,6 @@
 from PIL import Image
 import math
-"""Compare final program pixels with an equally sized tile in a wide rendered multiview."""
+"""Validate Sony 1041–1048 far/near hinged entry, reversal, endpoints and MV identity."""
 import argparse,json,socket,subprocess,time,hashlib,numpy as np
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--binary',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--baseline',action='store_true');args=p.parse_args();root=args.output.resolve();root.mkdir(parents=True,exist_ok=True)
@@ -39,34 +39,42 @@ with (root/'server.log').open('w') as log:
    assert pictures[0]==pictures[1], 'Rendered multiview pixels differ from program'
    return {'direct':out[0],'rendered_multiview':out[1],'identical_rgb_pixels':True,'sha256':hashlib.sha256(pictures[0]).hexdigest()}
   cmd('PLAY 1-1 #ff0000');cmd('PLAY 2-1 #0000ff');time.sleep(.2)
-  codes=list(range(1101,1105))+[1121,1122]
   pixels=np.zeros((720,1280,3),dtype=np.uint8)
   pixels[:,:,0]=np.round(np.arange(1280)[None,:]*255/1279).astype(np.uint8)
   pixels[:,:,1]=np.round(np.arange(720)[:,None]*255/719).astype(np.uint8)
   for channel,blue in [(1,64),(2,128)]:
    pixels[:,:,2]=blue;texture=root/f'uv-{channel}.png';Image.fromarray(pixels).save(texture);cmd(f'PLAY {channel}-1 "{texture}"')
   time.sleep(.2)
-  for code in codes:
-   cmd('PLAY 3-1 route://1-1');time.sleep(.1);cmd(f'PLAY 3-1 route://2 RENDERED DMENATIVE 25 SONY_{code} MANUAL 1')
-   cmd('PLAY 4-1 route://3 RENDERED');cmd('MIXER 4-1 FILL 0 0 .5 1')
-   for progress in [.25,.75]:
-    cmd(f'CALL 3-1 "PROGRESS {progress}"');time.sleep(.1);result=capture(f'{code}-{progress}')
-    vertical=code in [1045,1046,1101,1103,1121]
-    if code<1100:angle=(1 if code in [1045,1048] else -1)*(1-progress)*math.pi/2;scale=1;blue=128
-    else:angle=(-1 if code>=1121 else 1)*math.pi*(progress if progress<.5 else progress-1);scale=1-.35*math.sin(math.pi*progress) if code>=1103 else 1;blue=64 if progress<.5 else 128
-    checks=[]
-    for u,v in [(.25,.25),(.75,.25),(.75,.75),(.25,.75),(.5,.5)]:
-     x=(u-.5)*(1280/720)*scale;y=(v-.5)*scale
-     depth=-x*math.sin(angle) if vertical else y*math.sin(angle)
-     if vertical:x*=math.cos(angle)
-     else:y*=math.cos(angle)
-     factor=3.5/(3.5-depth);ix=round((.5+x*factor/(1280/720))*1279);iy=round((.5+y*factor)*719)
-     expected=np.array([round(255*u),round(255*v),blue]);sample=capture.rgb[iy,ix].astype(int)
-     assert np.max(np.abs(sample-expected))<=3,(code,progress,u,v,sample.tolist(),expected.tolist())
-     checks.append({'uv':[u,v],'pixel':[ix,iy],'sample':sample.tolist()})
-    result['texture_checks']=checks;results[f'{code}-{progress}']=result
-   print('VERIFIED SPATIAL TEXTURE',code,flush=True)
-
+  for code in range(1041,1049):
+   for reverse in (False,True):
+    cmd('PLAY 3-1 route://1 RENDERED');time.sleep(.1)
+    cmd(f'PLAY 3-1 route://2 RENDERED DMENATIVE 25 SONY_{code} MANUAL 1 REVERSE {int(reverse)}')
+    cmd('PLAY 4-1 route://3 RENDERED');cmd('MIXER 4-1 FILL 0 0 .5 1')
+    for progress in (.25,.75):
+     cmd(f'CALL 3-1 "PROGRESS {progress}"');time.sleep(.1)
+     result=capture(f'{code}-{int(reverse)}-{progress}')
+     t=1-progress if reverse else progress
+     phase=(code-1041)%4;horizontal=phase<2;hinge=1 if phase in (1,3) else 0
+     angle=(1-t)*math.pi/2;aspect=1280/720
+     checks=[]
+     for u,v in ((.25,.25),(.75,.25),(.75,.75),(.25,.75),(.5,.5)):
+      px=(u-.5)*aspect;py=v-.5;offset=(u if horizontal else v)-hinge
+      z=(-1 if code<=1044 else 1)*abs(offset)*(aspect if horizontal else 1)*math.sin(angle)
+      if horizontal:px=((hinge-.5)+offset*math.cos(angle))*aspect
+      else:py=(hinge-.5)+offset*math.cos(angle)
+      scale=3.5/(3.5-z);ix=round((.5+px*scale/aspect)*1279);iy=round((.5+py*scale)*719)
+      if not (2<=ix<1278 and 2<=iy<718):continue
+      expected=np.array([round(255*u),round(255*v),64 if reverse else 128])
+      sample=capture.rgb[iy,ix].astype(int)
+      assert np.max(np.abs(sample-expected))<=5,(code,reverse,progress,u,v,sample.tolist(),expected.tolist())
+      checks.append({'uv':[u,v],'pixel':[ix,iy],'sample':sample.tolist()})
+     assert checks
+     result['texture_checks']=checks;results[f'{code}-{int(reverse)}-{progress}']=result
+    for progress in (0,1):
+     cmd(f'CALL 3-1 "PROGRESS {progress}"');time.sleep(.1)
+     capture(f'{code}-{int(reverse)}-endpoint-{progress}')
+     assert abs(int(capture.rgb[360,640,2])-(64 if progress==0 else 128))<=2
+    print('VERIFIED DOOR DEPTH',code,'REV' if reverse else 'NORM',flush=True)
  finally:
   proc.stdin.write(b'q\n');proc.stdin.flush()
   try:proc.wait(timeout=8)

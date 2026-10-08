@@ -1,0 +1,900 @@
+diff --git a/.gitignore b/.gitignore
+index f0ec2f85b3abb8453da4f066e7e70a564f1f2a5f..22d86423af65094f63429bc744bc6c42be482040 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -17,4 +17,5 @@ src/.idea
+ 
+ # debian build artifacts
+ /debian
+-/obj-*
+\ No newline at end of file
++/obj-*
++__pycache__/
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index ee1372d33a29e27945406f0527f8af8e6ee119c9..0d91a54c7d439e84e3dd17d3594f1b2b6737f430 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.2.2
++0.3.0
+diff --git a/src/core/CMakeLists.txt b/src/core/CMakeLists.txt
+index 182b0484c84f99db5e9955b04e332c349c7f4405..d5d157a24e2355d827d0823baf08ec38111525b0 100644
+--- a/src/core/CMakeLists.txt
++++ b/src/core/CMakeLists.txt
+@@ -9,6 +9,7 @@ set(SOURCES
+ 		diagnostics/call_context.cpp
+ 		diagnostics/osd_graph.cpp
+ 
++		frame_sync_group.cpp
+ 		frame/draw_frame.cpp
+ 		frame/frame.cpp
+ 		frame/frame_transform.cpp
+diff --git a/src/core/consumer/output.cpp b/src/core/consumer/output.cpp
+index b54c44adcc603d93222588cfb31317a282be2bec..427fd1310f04ff5c5184fc8a3c970b84a864f7a1 100644
+--- a/src/core/consumer/output.cpp
++++ b/src/core/consumer/output.cpp
+@@ -52,19 +52,22 @@ struct output::impl
+     std::map<int, spl::shared_ptr<frame_consumer>> consumers_;
+ 
+     std::optional<time_point_t> time_;
++    const bool frame_synchronized_;
+ 
+   public:
+-    impl(const spl::shared_ptr<diagnostics::graph>& graph, const video_format_desc& format_desc, const core::channel_info& channel_info)
++    impl(const spl::shared_ptr<diagnostics::graph>& graph, const video_format_desc& format_desc, const core::channel_info& channel_info, bool frame_synchronized)
+         : graph_(graph)
+         , channel_info_(channel_info)
+         , format_desc_(format_desc)
++        , frame_synchronized_(frame_synchronized)
+     {
+     }
+ 
+     void add(int index, spl::shared_ptr<frame_consumer> consumer)
+     {
++        if (frame_synchronized_ && consumer->has_synchronization_clock())
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info("Hardware-clock consumers cannot own a software synchronization group"));
+         remove(index);
+-
+         consumer->initialize(format_desc_, channel_info_, index);
+ 
+         std::lock_guard<std::mutex> lock(consumers_mutex_);
+@@ -113,6 +116,7 @@ struct output::impl
+         // If no frame is provided, this should only happen when the channel has no consumers.
+         // Take a shortcut and perform the sleep to let the channel tick correctly.
+         if (!input_frame1) {
++            if (frame_synchronized_) return;
+             if (!time) {
+                 time = std::chrono::high_resolution_clock::now();
+             } else {
+@@ -194,7 +198,7 @@ struct output::impl
+         }
+         state_ = std::move(state);
+ 
+-        const auto needs_sync = std::all_of(
++        const auto needs_sync = !frame_synchronized_ && std::all_of(
+             consumers.begin(), consumers.end(), [](auto& p) { return !p.second->has_synchronization_clock(); });
+ 
+         if (needs_sync) {
+@@ -214,8 +218,8 @@ struct output::impl
+ 
+ output::output(const spl::shared_ptr<diagnostics::graph>& graph,
+                const video_format_desc&                   format_desc,
+-               const core::channel_info&                  channel_info)
+-    : impl_(new impl(graph, format_desc, channel_info))
++               const core::channel_info&                  channel_info, bool frame_synchronized)
++    : impl_(new impl(graph, format_desc, channel_info, frame_synchronized))
+ {
+ }
+ output::~output() {}
+diff --git a/src/core/consumer/output.h b/src/core/consumer/output.h
+index 02af1c36eb3b20d97e6822e2ef4d06b18f7ea6b2..ff01a28ac1b85313e6d96fa9c83dd36899ad12d9 100644
+--- a/src/core/consumer/output.h
++++ b/src/core/consumer/output.h
+@@ -40,7 +40,7 @@ class output final
+   public:
+     explicit output(const spl::shared_ptr<diagnostics::graph>& graph,
+                     const video_format_desc&                   format_desc,
+-                    const core::channel_info&                  channel_info);
++                    const core::channel_info&                  channel_info, bool frame_synchronized = false);
+ 
+     output(const output&)            = delete;
+     output& operator=(const output&) = delete;
+diff --git a/src/core/frame_sync_group.cpp b/src/core/frame_sync_group.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..583a68b9ab0ca13bd6378c6f3ffd16f8808887f7
+--- /dev/null
++++ b/src/core/frame_sync_group.cpp
+@@ -0,0 +1,129 @@
++/*
++ * Copyright (c) 2026 casparMIX contributors.
++ *
++ * This file is part of CasparCG (www.casparcg.com).
++ * SPDX-License-Identifier: GPL-3.0-or-later
++ */
++
++#include "StdAfx.h"
++#include "frame_sync_group.h"
++#include <common/except.h>
++#include <common/log.h>
++#include <common/os/thread.h>
++#include <chrono>
++#include <set>
++
++namespace caspar::core {
++
++std::vector<int> frame_sync_group::order_locked() const
++{
++    std::vector<int> result;
++    std::set<int> done;
++    while (result.size() < members_.size()) {
++        bool advanced = false;
++        for (const auto& member : members_) {
++            if (done.count(member.first)) continue;
++            bool ready = true;
++            for (const auto& edge : edges_)
++                if (edge.second && edge.first.second == member.first && !done.count(edge.first.first))
++                    ready = false;
++            if (ready) {
++                done.insert(member.first);
++                result.push_back(member.first);
++                advanced = true;
++            }
++        }
++        if (!advanced)
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info("Frame synchronization routes must be acyclic"));
++    }
++    return result;
++}
++
++void frame_sync_group::add(int channel, const video_format_desc& format, std::function<void(uint64_t)> render)
++{
++    std::lock_guard<std::mutex> lock(mutex_);
++    if (thread_.joinable() || stopped_)
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info("Cannot add channels to a running synchronization group"));
++    if (format.field_count != 1 || (!members_.empty() &&
++        (format.framerate.numerator() != numerator_ || format.framerate.denominator() != denominator_)))
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info("Synchronization groups require matching progressive frame rates"));
++    numerator_ = format.framerate.numerator();
++    denominator_ = format.framerate.denominator();
++    members_.emplace(channel, std::move(render));
++}
++
++std::shared_ptr<void> frame_sync_group::dependency(int source, int destination)
++{
++    if (source == destination) return {};
++    const auto key = std::make_pair(source, destination);
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        if (!members_.count(source) || !members_.count(destination))
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info("Route endpoints must belong to the same synchronization group"));
++        ++edges_[key];
++        try { order_locked(); }
++        catch (...) { if (!--edges_[key]) edges_.erase(key); throw; }
++    }
++    const auto weak = weak_from_this();
++    return std::shared_ptr<void>(new int(0), [weak, key](void* p) {
++        delete static_cast<int*>(p);
++        if (auto self = weak.lock()) {
++            std::lock_guard<std::mutex> lock(self->mutex_);
++            auto edge = self->edges_.find(key);
++            if (edge != self->edges_.end() && !--edge->second) self->edges_.erase(edge);
++        }
++    });
++}
++
++void frame_sync_group::start()
++{
++    std::lock_guard<std::mutex> lock(mutex_);
++    if (members_.empty() || thread_.joinable() || stopped_) return;
++    thread_ = std::thread([this] {
++        using clock = std::chrono::steady_clock;
++        set_thread_name(L"frame-sync");
++        set_thread_realtime_priority();
++        auto origin = clock::now();
++        uint64_t tick = 0;
++        while (true) {
++            std::vector<std::function<void(uint64_t)>> work;
++            {
++                std::lock_guard<std::mutex> lock(mutex_);
++                if (stopped_) break;
++                for (int id : order_locked()) work.push_back(members_.at(id));
++            }
++            epoch_.store(++tick, std::memory_order_release);
++            for (auto& render : work) render(tick);
++            // Derive deadlines from a rational rate, not rounded per-frame sleeps.
++            auto deadline = origin + std::chrono::duration_cast<clock::duration>(
++                std::chrono::duration<double>(double(tick) * denominator_ / numerator_));
++            // If rendering falls more than one frame behind, rebase the wall
++            // clock instead of issuing an unbounded burst of catch-up frames.
++            // Epochs remain sequential; overload lowers output rate.
++            const auto now = clock::now();
++            const auto period = std::chrono::duration_cast<clock::duration>(
++                std::chrono::duration<double>(double(denominator_) / numerator_));
++            if (now > deadline + period) {
++                origin += now - deadline;
++                deadline = now;
++            }
++            std::unique_lock<std::mutex> lock(mutex_);
++            if (wake_.wait_until(lock, deadline, [this] { return stopped_; })) break;
++        }
++    });
++}
++
++void frame_sync_group::stop()
++{
++    { std::lock_guard<std::mutex> lock(mutex_); stopped_ = true; }
++    wake_.notify_all();
++    if (thread_.joinable()) thread_.join();
++}
++void frame_sync_group::remove(int channel)
++{
++    stop(); // No callback may still refer to a channel being destroyed.
++    std::lock_guard<std::mutex> lock(mutex_);
++    members_.erase(channel);
++}
++frame_sync_group::~frame_sync_group() { stop(); }
++}
+diff --git a/src/core/frame_sync_group.h b/src/core/frame_sync_group.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..47f6fbf6b3b62c591005b41eaa4c2438d5c077fb
+--- /dev/null
++++ b/src/core/frame_sync_group.h
+@@ -0,0 +1,46 @@
++/*
++ * Copyright (c) 2026 casparMIX contributors.
++ *
++ * This file is part of CasparCG (www.casparcg.com).
++ * SPDX-License-Identifier: GPL-3.0-or-later
++ */
++
++#pragma once
++
++#include "video_format.h"
++#include <atomic>
++#include <condition_variable>
++#include <functional>
++#include <map>
++#include <memory>
++#include <mutex>
++#include <thread>
++#include <vector>
++
++namespace caspar::core {
++
++// Opt-in progressive software-clock domain. Dependencies determine evaluation
++// order; every member advances once per epoch, including consumer-free sources.
++class frame_sync_group : public std::enable_shared_from_this<frame_sync_group>
++{
++    std::mutex mutex_;
++    std::condition_variable wake_;
++    std::map<int, std::function<void(uint64_t)>> members_;
++    std::map<std::pair<int, int>, unsigned> edges_;
++    std::atomic<uint64_t> epoch_{0};
++    std::thread thread_;
++    bool stopped_ = false;
++    int numerator_ = 0;
++    int denominator_ = 1;
++    std::vector<int> order_locked() const;
++
++public:
++    ~frame_sync_group();
++    void add(int channel, const video_format_desc& format, std::function<void(uint64_t)> render);
++    void remove(int channel);
++    std::shared_ptr<void> dependency(int source, int destination);
++    uint64_t epoch() const { return epoch_.load(std::memory_order_acquire); }
++    void start();
++    void stop();
++};
++}
+diff --git a/src/core/mixer/mixer.cpp b/src/core/mixer/mixer.cpp
+index e9bb76aa9866b81bf4f4c7bdd9a405b24320c647..271db1fc7afd751532a8857f1c1385f12df57fc6 100644
+--- a/src/core/mixer/mixer.cpp
++++ b/src/core/mixer/mixer.cpp
+@@ -60,7 +60,7 @@ struct mixer::impl
+     {
+     }
+ 
+-    const_frame operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples, bool readback)
++    const_frame operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples, bool readback, bool pipelined)
+     {
+         image_mixer_->update_aspect_ratio(static_cast<double>(format_desc.square_width) /
+                                           static_cast<double>(format_desc.square_height));
+@@ -94,7 +94,7 @@ struct mixer::impl
+                                     return const_frame(tag, std::move(image_data), std::move(audio), desc, std::move(std::get<1>(tuple)));
+                                 }));
+ 
+-        if (buffer_.size() <= format_desc.field_count) {
++        if (pipelined && buffer_.size() <= format_desc.field_count) {
+             return const_frame{};
+         }
+ 
+@@ -133,9 +133,9 @@ mixer::mixer(int channel_index, spl::shared_ptr<diagnostics::graph> graph, spl::
+ }
+ void        mixer::set_master_volume(float volume) { impl_->set_master_volume(volume); }
+ float       mixer::get_master_volume() { return impl_->get_master_volume(); }
+-const_frame mixer::operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples, bool readback)
++const_frame mixer::operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples, bool readback, bool pipelined)
+ {
+-    return (*impl_)(std::move(frames), format_desc, nb_samples, readback);
++    return (*impl_)(std::move(frames), format_desc, nb_samples, readback, pipelined);
+ }
+ void mixer::meter_audio(const std::vector<draw_frame>& frames, const video_format_desc& format_desc, int nb_samples)
+ {
+diff --git a/src/core/mixer/mixer.h b/src/core/mixer/mixer.h
+index 78dfb4bf6074a262201e895ea86fe684a7e56702..bb5d765c07942a66bc2a018d68705c28a58f6001 100644
+--- a/src/core/mixer/mixer.h
++++ b/src/core/mixer/mixer.h
+@@ -43,7 +43,7 @@ class mixer final
+                    spl::shared_ptr<caspar::diagnostics::graph> graph,
+                    spl::shared_ptr<image_mixer>                image_mixer);
+ 
+-    const_frame operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples, bool readback = true);
++    const_frame operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples, bool readback = true, bool pipelined = true);
+ 
+     void meter_audio(const std::vector<draw_frame>& frames, const video_format_desc& format_desc, int nb_samples);
+ 
+diff --git a/src/core/producer/route/route_producer.cpp b/src/core/producer/route/route_producer.cpp
+index 673389dabef344d36a4bac7ec4c0836931e5efd7..d5e11da393557e85f82db12f0003ea7d10879c5f 100644
+--- a/src/core/producer/route/route_producer.cpp
++++ b/src/core/producer/route/route_producer.cpp
+@@ -31,6 +31,7 @@
+ #include <core/monitor/monitor.h>
+ #include <core/producer/frame_producer.h>
+ #include <core/video_channel.h>
++#include <core/frame_sync_group.h>
+ 
+ #include <boost/regex.hpp>
+ #include <boost/signals2.hpp>
+@@ -140,6 +141,11 @@ class route_producer
+     std::atomic<bool>                                            ready_{false};
+ 
+     boost::signals2::scoped_connection connection_;
++    std::shared_ptr<frame_sync_group> sync_group_;
++    std::shared_ptr<void> dependency_;
++    std::mutex synced_mutex_;
++    std::optional<std::pair<draw_frame, draw_frame>> synced_frame_;
++    uint64_t synced_epoch_ = 0;
+ 
+     int get_source_channel() const override { return source_channel_; }
+     int get_source_layer() const override { return source_layer_; }
+@@ -178,6 +184,20 @@ class route_producer
+         CASPAR_LOG(debug) << print() << L" Initialized";
+     }
+ 
++    void synchronize(std::shared_ptr<frame_sync_group> group, std::shared_ptr<void> dependency)
++    {
++        sync_group_ = std::move(group);
++        dependency_ = std::move(dependency);
++    }
++
++    draw_frame first_frame(const core::video_field field) override
++    {
++        // Live synchronized routes must not prime frame_producer's cached first
++        // picture: it may be obsolete by the time a queued PLAY reaches the stage.
++        if (sync_group_) return last_frame(field);
++        return frame_producer::first_frame(field);
++    }
++
+     void connect_slot()
+     {
+         auto weak_self = weak_from_this();
+@@ -207,7 +227,12 @@ class route_producer
+                         frame2b = self->tag_fix_(frame2b);
+                     }
+ 
+-                    if (!self->buffer_.try_push(std::make_pair(frame1b, frame2b))) {
++                    if (self->sync_group_) {
++                        std::lock_guard<std::mutex> lock(self->synced_mutex_);
++                        self->synced_frame_ = std::make_pair(std::move(frame1b), std::move(frame2b));
++                        self->synced_epoch_ = self->route_->epoch.load(std::memory_order_acquire);
++                        self->ready_.store(true, std::memory_order_release);
++                    } else if (!self->buffer_.try_push(std::make_pair(frame1b, frame2b))) {
+                         self->graph_->set_tag(diagnostics::tag_severity::WARNING, "dropped-frame");
+                     } else {
+                         self->ready_.store(true, std::memory_order_release);
+@@ -221,6 +246,12 @@ class route_producer
+ 
+     draw_frame last_frame(const core::video_field field) override
+     {
++        if (sync_group_) {
++            std::lock_guard<std::mutex> lock(synced_mutex_);
++            if (synced_frame_ && synced_epoch_ == sync_group_->epoch())
++                return draw_frame::still(field == video_field::b ? synced_frame_->second : synced_frame_->first);
++            return frame_ ? draw_frame::still(frame_->first) : draw_frame{};
++        }
+         if (!frame_) {
+             std::pair<core::draw_frame, core::draw_frame> frame;
+             if (buffer_.try_pop(frame)) {
+@@ -242,6 +273,12 @@ class route_producer
+     core::video_field next_field_ = core::video_field::a;
+     draw_frame receive_impl(core::video_field field, int nb_samples) override
+     {
++        if (sync_group_) {
++            std::lock_guard<std::mutex> lock(synced_mutex_);
++            if (!synced_frame_ || synced_epoch_ != sync_group_->epoch()) return draw_frame{};
++            frame_ = synced_frame_;
++            return field == video_field::b ? frame_->second : frame_->first;
++        }
+         // If going i -> p, alternate between the fields
+         // Note: this doesn't fix the audio if going 50i -> 25p
+         if (field == core::video_field::progressive && source_format_.field_count != 1 && format_desc_.fps >= source_format_.fps) {
+@@ -272,7 +309,14 @@ class route_producer
+         }
+     }
+ 
+-    bool is_ready() override { return ready_.load(std::memory_order_acquire); }
++    bool is_ready() override
++    {
++        if (sync_group_) {
++            std::lock_guard<std::mutex> lock(synced_mutex_);
++            return synced_frame_ && synced_epoch_ == sync_group_->epoch();
++        }
++        return ready_.load(std::memory_order_acquire);
++    }
+ 
+     std::wstring print() const override { return L"route[" + route_->name + L"]"; }
+ 
+@@ -331,6 +375,25 @@ spl::shared_ptr<core::frame_producer> create_route_producer(const core::frame_pr
+ 
+     auto buffer = get_param(L"BUFFER", params, 0);
+     auto rp     = spl::make_shared<route_producer>((*channel_it)->route(layer, mode), dependencies.format_desc, buffer, channel, layer);
++    auto destination = std::find_if(dependencies.channels.begin(), dependencies.channels.end(),
++        [&](const auto& ch) { return ch->frame_factory() == dependencies.frame_factory; });
++    if (destination != dependencies.channels.end()) {
++        auto group = (*destination)->synchronization_group();
++        if (group) {
++            if (group != (*channel_it)->synchronization_group())
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info("Synchronized channels cannot route from an independent clock domain"));
++            if (channel == (*destination)->index() && layer < 0)
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info("Synchronized routes cannot add buffering or whole-channel self-feedback"));
++            // Intra-channel layer routes intentionally read the previous stage
++            // snapshot (e.g. DSK hold layers). Only cross-channel routes join the
++            // current-epoch dependency graph.
++            if (channel != (*destination)->index()) {
++                if (buffer > 0)
++                    CASPAR_THROW_EXCEPTION(user_error() << msg_info("Synchronized cross-channel routes cannot add buffering"));
++                rp->synchronize(group, group->dependency(channel, (*destination)->index()));
++            }
++        }
++    }
+     rp->connect_slot();
+     return rp;
+ }
+diff --git a/src/core/producer/stage.cpp b/src/core/producer/stage.cpp
+index 2c984dbfc744c210a9417ef2887dd8cd7ebbd097..259f7037eba39f56fea1e5ee823bb96617f1aad4 100644
+--- a/src/core/producer/stage.cpp
++++ b/src/core/producer/stage.cpp
+@@ -54,6 +54,7 @@ struct stage::impl : public std::enable_shared_from_this<impl>
+ 
+     mutable std::mutex      format_desc_mutex_;
+     core::video_format_desc format_desc_;
++    bool frame_rate_locked_ = false;
+ 
+     executor   executor_{L"stage " + std::to_wstring(channel_index_)};
+     std::mutex lock_;
+@@ -416,6 +417,10 @@ struct stage::impl : public std::enable_shared_from_this<impl>
+ 
+     std::future<void> video_format_desc(const core::video_format_desc& format_desc)
+     {
++        { std::lock_guard<std::mutex> lock(format_desc_mutex_);
++          if (frame_rate_locked_ && (format_desc.field_count != 1 || format_desc.framerate != format_desc_.framerate))
++              CASPAR_THROW_EXCEPTION(user_error() << msg_info("Cannot change the frame rate of a synchronized channel")); }
++
+         return executor_.begin_invoke([=] {
+             {
+                 std::lock_guard<std::mutex> lock(format_desc_mutex_);
+@@ -488,6 +493,7 @@ const stage_frames                           stage::operator()(uint64_t
+     return (*impl_)(frame_number, fetch_background, routesCb);
+ }
+ core::monitor::state    stage::state() const { return impl_->state_; }
++void stage::lock_frame_rate() { std::lock_guard<std::mutex> lock(impl_->format_desc_mutex_); impl_->frame_rate_locked_ = true; }
+ core::video_format_desc stage::video_format_desc() const { return impl_->video_format_desc(); }
+ std::future<void>       stage::video_format_desc(const core::video_format_desc& format_desc)
+ {
+diff --git a/src/core/producer/stage.h b/src/core/producer/stage.h
+index 2edfcff6b23ccb598cfd18a7e835588010a3df36..c0a6fa8b33519bba5efd5ecf4970fbbfd376181b 100644
+--- a/src/core/producer/stage.h
++++ b/src/core/producer/stage.h
+@@ -154,6 +154,7 @@ class stage final : public stage_base
+     std::future<void>            execute(std::function<void()> k) override;
+     std::unique_lock<std::mutex> get_lock() const;
+ 
++    void lock_frame_rate();
+     core::video_format_desc video_format_desc() const;
+     std::future<void>       video_format_desc(const core::video_format_desc& format_desc);
+ 
+diff --git a/src/core/video_channel.cpp b/src/core/video_channel.cpp
+index 9108332a55aceb196aba7d1c2f59d0c6af49083b..f1ac7aaa478a4094ea6120053931f9b8a39d2ecc 100644
+--- a/src/core/video_channel.cpp
++++ b/src/core/video_channel.cpp
+@@ -23,6 +23,7 @@
+ 
+ #include "common/os/thread.h"
+ #include "video_channel.h"
++#include "frame_sync_group.h"
+ 
+ #include "video_format.h"
+ 
+@@ -74,6 +75,8 @@ struct video_channel::impl final
+     std::shared_ptr<core::stage> stage_;
+ 
+     uint64_t frame_counter_ = 0;
++    std::shared_ptr<frame_sync_group> sync_group_;
++    video_format_desc initial_format_;
+ 
+     std::function<void(core::monitor::state)> tick_;
+ 
+@@ -92,6 +95,7 @@ struct video_channel::impl final
+                 if (!route)
+                     continue;
+ 
++                route->epoch.store(frame_counter_, std::memory_order_release);
+                 if (r.first.index == -1) {
+                     route->signal(layer_frame.foreground1, layer_frame.foreground2);
+                 } else if (r.first.mode == route_mode::background ||
+@@ -109,12 +113,14 @@ struct video_channel::impl final
+          const core::video_format_desc&            format_desc,
+          color_space                               default_color_space,
+          std::unique_ptr<image_mixer>              image_mixer,
+-         std::function<void(core::monitor::state)> tick)
++         std::function<void(core::monitor::state)> tick, std::shared_ptr<frame_sync_group> sync_group)
+         : channel_info_(index, image_mixer->depth(), default_color_space)
+-        , output_(graph_, format_desc, channel_info_)
++        , output_(graph_, format_desc, channel_info_, bool(sync_group))
+         , image_mixer_(std::move(image_mixer))
+         , mixer_(index, graph_, image_mixer_)
+         , stage_(std::make_shared<core::stage>(index, graph_, format_desc))
++        , sync_group_(std::move(sync_group))
++        , initial_format_(format_desc)
+         , tick_(std::move(tick))
+     {
+         graph_->set_color("produce-time", caspar::diagnostics::color(0.0f, 1.0f, 0.0f));
+@@ -127,115 +133,125 @@ struct video_channel::impl final
+ 
+         CASPAR_LOG(info) << print() << " Successfully Initialized.";
+ 
+-        thread_ = std::thread([=] {
+-            set_thread_realtime_priority();
+-            set_thread_name(L"channel-" + std::to_wstring(channel_info_.index));
++        if (sync_group_) {
++            stage_->lock_frame_rate();
++            sync_group_->add(index, format_desc, [this](uint64_t epoch) { render_frame(epoch); });
++        } else {
++            thread_ = std::thread([this] {
++                set_thread_realtime_priority();
++                set_thread_name(L"channel-" + std::to_wstring(channel_info_.index));
++                while (!abort_request_) render_frame(frame_counter_ + 1);
++            });
++        }
++    }
+ 
+-            while (!abort_request_) {
+-                try {
+-                    graph_->set_text(print());
++    void render_frame(uint64_t epoch)
++    {
++        try {
++            graph_->set_text(print());
+ 
+-                    frame_counter_ += 1;
++            frame_counter_ = epoch;
++            const auto& format_desc = initial_format_;
+ 
+-                    caspar::timer frame_timer;
++            caspar::timer frame_timer;
+ 
+-                    // Determine all layers that need a frame from the background producer
+-                    std::vector<int> background_routes = {};
+-                    {
+-                        std::lock_guard<std::mutex> lock(routes_mutex_);
++            // Determine all layers that need a frame from the background producer
++            std::vector<int> background_routes = {};
++            {
++                std::lock_guard<std::mutex> lock(routes_mutex_);
+ 
+-                        for (auto& r : routes_) {
+-                            // Ensure pointer is still valid
+-                            if (!r.second.lock())
+-                                continue;
++                for (auto& r : routes_) {
++                    // Ensure pointer is still valid
++                    if (!r.second.lock())
++                        continue;
+ 
+-                            if (r.first.mode != route_mode::foreground && r.first.mode != route_mode::rendered) {
+-                                background_routes.push_back(r.first.index);
+-                            }
+-                        }
++                    if (r.first.mode != route_mode::foreground && r.first.mode != route_mode::rendered) {
++                        background_routes.push_back(r.first.index);
+                     }
++                }
++            }
+ 
+-                    // Produce
+-                    caspar::timer produce_timer;
+-                    auto          stage_frames = (*stage_)(frame_counter_, background_routes, routesCb);
+-                    graph_->set_value("produce-time", produce_timer.elapsed() * format_desc.hz * 0.5);
+-
+-                    // This is a little race prone, but at worst a new consumer will start with a frame of black
+-                    bool has_consumers = output_.consumer_count() > 0;
+-                    std::vector<std::shared_ptr<core::route>> rendered_routes;
+-                    {
+-                        std::lock_guard<std::mutex> lock(routes_mutex_);
+-                        for (const auto& entry : routes_)
+-                            if (entry.first.mode == route_mode::rendered)
+-                                if (auto route = entry.second.lock())
+-                                    rendered_routes.push_back(std::move(route));
+-                    }
+-                    const bool needs_render = has_consumers || !rendered_routes.empty();
+-
+-                    // Mix
+-                    caspar::timer mix_timer;
+-                    auto          mixed_frame =
+-                        needs_render ? mixer_(stage_frames.frames, stage_frames.format_desc, stage_frames.nb_samples, has_consumers)
+-                                               : const_frame{};
+-                    auto mixed_frame2 =
+-                        needs_render && stage_frames.format_desc.field_count == 2
+-                            ? mixer_(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples, has_consumers)
+-                            : const_frame{};
+-                    graph_->set_value("mix-time", mix_timer.elapsed() * format_desc.hz * 0.5);
+-
+-                    // Audio metering does not require a full-frame video render.
+-                    if (!needs_render) {
+-                        mixer_.discard_pending_frames();
+-                        mixer_.meter_audio(stage_frames.frames, stage_frames.format_desc, stage_frames.nb_samples);
+-                        if (stage_frames.format_desc.field_count == 2)
+-                            mixer_.meter_audio(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples);
+-                    }
++            // Produce
++            caspar::timer produce_timer;
++            auto          stage_frames = (*stage_)(frame_counter_, background_routes, routesCb);
++            graph_->set_value("produce-time", produce_timer.elapsed() * format_desc.hz * 0.5);
++
++            // This is a little race prone, but at worst a new consumer will start with a frame of black
++            bool has_consumers = output_.consumer_count() > 0;
++            std::vector<std::shared_ptr<core::route>> rendered_routes;
++            {
++                std::lock_guard<std::mutex> lock(routes_mutex_);
++                for (const auto& entry : routes_)
++                    if (entry.first.mode == route_mode::rendered)
++                        if (auto route = entry.second.lock())
++                            rendered_routes.push_back(std::move(route));
++            }
++            const bool needs_render = has_consumers || !rendered_routes.empty();
++
++            // Mix
++            caspar::timer mix_timer;
++            auto          mixed_frame =
++                needs_render ? mixer_(stage_frames.frames, stage_frames.format_desc, stage_frames.nb_samples, has_consumers, !sync_group_)
++                                       : const_frame{};
++            auto mixed_frame2 =
++                needs_render && stage_frames.format_desc.field_count == 2
++                    ? mixer_(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples, has_consumers, !sync_group_)
++                    : const_frame{};
++            graph_->set_value("mix-time", mix_timer.elapsed() * format_desc.hz * 0.5);
++
++            // Audio metering does not require a full-frame video render.
++            if (!needs_render) {
++                mixer_.discard_pending_frames();
++                mixer_.meter_audio(stage_frames.frames, stage_frames.format_desc, stage_frames.nb_samples);
++                if (stage_frames.format_desc.field_count == 2)
++                    mixer_.meter_audio(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples);
++            }
+ 
+-                    // Consume
+-                    caspar::timer consume_timer;
+-                    // Publish outside routes_mutex_: callbacks can retire routes.
+-                    // A mixed const_frame contains exactly one audio mix and an
+-                    // isolated image, so destination transforms cannot alter keys.
+-                    if (mixed_frame) {
+-                        for (const auto& route : rendered_routes)
+-                            route->signal(draw_frame(mixed_frame), mixed_frame2 ? draw_frame(mixed_frame2) : draw_frame{});
+-                    }
+-                    // GPU-only frames must never reach CPU image consumers.
+-                    // During consumer hot-plug, let them hold their last frame
+-                    // until the normal readback pipeline is primed.
+-                    const bool cpu_ready = has_consumers && mixed_frame && mixed_frame.size() > 0 &&
+-                        (stage_frames.format_desc.field_count == 1 || (mixed_frame2 && mixed_frame2.size() > 0));
+-                    output_(cpu_ready ? mixed_frame : const_frame{},
+-                            cpu_ready ? mixed_frame2 : const_frame{}, stage_frames.format_desc);
+-                    graph_->set_value("consume-time", consume_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
+-
+-                    graph_->set_value("frame-time", frame_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
+-
+-                    monitor::state state = {};
+-                    state["stage"]       = stage_->state();
+-                    state["mixer"]       = mixer_.state();
+-                    state["output"]      = output_.state();
+-                    state["framerate"]   = {stage_frames.format_desc.framerate.numerator() *
+-                                                stage_frames.format_desc.field_count,
+-                                            stage_frames.format_desc.framerate.denominator()};
+-                    state["format"]      = stage_frames.format_desc.name;
+-                    state_               = state;
+-
+-                    caspar::timer osc_timer;
+-                    tick_(state_);
+-                    graph_->set_value("osc-time", osc_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
+-                } catch (...) {
+-                    CASPAR_LOG_CURRENT_EXCEPTION();
++            // Consume
++            caspar::timer consume_timer;
++            // Publish outside routes_mutex_: callbacks can retire routes.
++            // A mixed const_frame contains exactly one audio mix and an
++            // isolated image, so destination transforms cannot alter keys.
++            if (mixed_frame) {
++                for (const auto& route : rendered_routes) {
++                    route->epoch.store(epoch, std::memory_order_release);
++                    route->signal(draw_frame(mixed_frame), mixed_frame2 ? draw_frame(mixed_frame2) : draw_frame{});
+                 }
+             }
+-        });
++            // GPU-only frames must never reach CPU image consumers.
++            // During consumer hot-plug, let them hold their last frame
++            // until the normal readback pipeline is primed.
++            const bool cpu_ready = has_consumers && mixed_frame && mixed_frame.size() > 0 &&
++                (stage_frames.format_desc.field_count == 1 || (mixed_frame2 && mixed_frame2.size() > 0));
++            output_(cpu_ready ? mixed_frame : const_frame{},
++                    cpu_ready ? mixed_frame2 : const_frame{}, stage_frames.format_desc);
++            graph_->set_value("consume-time", consume_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
++
++            graph_->set_value("frame-time", frame_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
++
++            monitor::state state = {};
++            if (sync_group_) state["frame-sync/epoch"] = static_cast<int64_t>(epoch);
++            state["stage"]       = stage_->state();
++            state["mixer"]       = mixer_.state();
++            state["output"]      = output_.state();
++            state["framerate"]   = {stage_frames.format_desc.framerate.numerator() *
++                                        stage_frames.format_desc.field_count,
++                                    stage_frames.format_desc.framerate.denominator()};
++            state["format"]      = stage_frames.format_desc.name;
++            state_               = state;
++
++            caspar::timer osc_timer;
++            tick_(state_);
++            graph_->set_value("osc-time", osc_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
++        } catch (...) { CASPAR_LOG_CURRENT_EXCEPTION(); }
+     }
+ 
+     ~impl()
+     {
+         CASPAR_LOG(info) << print() << " Uninitializing.";
+         abort_request_ = true;
+-        thread_.join();
++        if (sync_group_) sync_group_->remove(channel_info_.index);
++        if (thread_.joinable()) thread_.join();
+     }
+ 
+     std::shared_ptr<core::route> route(int index = -1, route_mode mode = route_mode::foreground)
+@@ -281,8 +297,8 @@ video_channel::video_channel(int                                       index,
+                              const core::video_format_desc&            format_desc,
+                              color_space                               default_color_space,
+                              std::unique_ptr<image_mixer>              image_mixer,
+-                             std::function<void(core::monitor::state)> tick)
+-    : impl_(new impl(index, format_desc, default_color_space, std::move(image_mixer), std::move(tick)))
++                             std::function<void(core::monitor::state)> tick, std::shared_ptr<frame_sync_group> sync_group)
++    : impl_(new impl(index, format_desc, default_color_space, std::move(image_mixer), std::move(tick), std::move(sync_group)))
+ {
+ }
+ video_channel::~video_channel() {}
+@@ -297,6 +313,8 @@ int                                 video_channel::index() const { return impl_-
+ channel_info         video_channel::get_consumer_channel_info() const { return impl_->get_consumer_channel_info(); };
+ core::monitor::state video_channel::state() const { return impl_->state_; }
+ 
++std::shared_ptr<frame_sync_group> video_channel::synchronization_group() const { return impl_->sync_group_; }
++
+ std::shared_ptr<route> video_channel::route(int index, route_mode mode) { return impl_->route(index, mode); }
+ 
+ }} // namespace caspar::core
+diff --git a/src/core/video_channel.h b/src/core/video_channel.h
+index 7b0d54fc00f4428672fc3eb75ddaf585666cfb7c..22a65295076cd2d7b7b2890031e88d9c77cf6bd3 100644
+--- a/src/core/video_channel.h
++++ b/src/core/video_channel.h
+@@ -33,9 +33,12 @@
+ #include <boost/signals2.hpp>
+ 
+ #include <functional>
++#include <atomic>
+ 
+ namespace caspar { namespace core {
+ 
++class frame_sync_group;
++
+ enum route_mode
+ {
+     foreground,
+@@ -56,12 +59,13 @@ struct route
+ {
+     route()             = default;
+     route(const route&) = delete;
+-    route(route&&)      = default;
++    route(route&&)      = delete;
+ 
+     route& operator=(const route&) = delete;
+-    route& operator=(route&&)      = default;
++    route& operator=(route&&)      = delete;
+ 
+     boost::signals2::signal<void(class draw_frame, class draw_frame)> signal;
++    std::atomic<uint64_t> epoch{0};
+     video_format_desc                                                 format_desc;
+     std::wstring                                                      name;
+ };
+@@ -76,7 +80,8 @@ class video_channel final
+                            const video_format_desc&                  format_desc,
+                            color_space                               default_color_space,
+                            std::unique_ptr<image_mixer>              image_mixer,
+-                           std::function<void(core::monitor::state)> on_tick);
++                           std::function<void(core::monitor::state)> on_tick,
++                           std::shared_ptr<frame_sync_group> sync_group = {});
+     ~video_channel();
+ 
+     core::monitor::state state() const;
+@@ -91,6 +96,7 @@ class video_channel final
+     spl::shared_ptr<core::frame_factory> frame_factory();
+ 
+     int index() const;
++    std::shared_ptr<frame_sync_group> synchronization_group() const;
+ 
+     [[nodiscard]] channel_info get_consumer_channel_info() const;
+ 
+diff --git a/src/shell/server.cpp b/src/shell/server.cpp
+index 2a7e342507817eff07b02eea66c0cf5dfdeb15ed..ab5ddcb663e92e358232c5795a726e19e381bd0c 100644
+--- a/src/shell/server.cpp
++++ b/src/shell/server.cpp
+@@ -40,6 +40,7 @@
+ #include <core/producer/color/color_producer.h>
+ #include <core/producer/frame_producer.h>
+ #include <core/video_channel.h>
++#include <core/frame_sync_group.h>
+ #include <core/video_format.h>
+ 
+ #include <modules/image/consumer/image_consumer.h>
+@@ -108,6 +109,7 @@ struct server::impl
+     std::shared_ptr<osc::client>                           osc_client_ = std::make_shared<osc::client>(io_context_);
+     std::vector<std::shared_ptr<void>>                     predefined_osc_subscriptions_;
+     spl::shared_ptr<std::vector<protocol::amcp::channel_context>> channels_;
++    std::map<std::wstring, std::shared_ptr<core::frame_sync_group>> sync_groups_;
+     spl::shared_ptr<core::cg_producer_registry>                   cg_registry_;
+     spl::shared_ptr<core::frame_producer_registry>                producer_registry_;
+     spl::shared_ptr<core::frame_consumer_registry>                consumer_registry_;
+@@ -145,6 +147,8 @@ struct server::impl
+         setup_channel_producers_and_consumers(xml_channels);
+         CASPAR_LOG(info) << L"Initialized startup producers.";
+ 
++        for (const auto& entry : sync_groups_) entry.second->start();
++
+         setup_controllers(env::properties());
+         CASPAR_LOG(info) << L"Initialized controllers.";
+ 
+@@ -166,6 +170,7 @@ struct server::impl
+         primary_amcp_server_.reset();
+         async_servers_.clear();
+ 
++        for (const auto& entry : sync_groups_) entry.second->stop();
+         destroy_producers_synchronously();
+         destroy_consumers_synchronously();
+         channels_->clear();
+@@ -277,6 +282,13 @@ struct server::impl
+             if (format_desc.format == video_format::invalid)
+                 CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid video-mode: " + format_desc_str));
+ 
++            std::shared_ptr<core::frame_sync_group> sync_group;
++            const auto group_name = xml_channel.second.get<std::wstring>(L"sync-group", L"");
++            if (!group_name.empty()) {
++                auto& group = sync_groups_[group_name];
++                if (!group) group = std::make_shared<core::frame_sync_group>();
++                sync_group = group;
++            }
+             auto weak_client = std::weak_ptr<osc::client>(osc_client_);
+             auto channel_id  = static_cast<int>(channels_->size() + 1);
+             auto depth       = color_depth == 16 ? common::bit_depth::bit16 : common::bit_depth::bit8;
+@@ -294,7 +306,7 @@ struct server::impl
+                                                     if (client) {
+                                                         client->send(std::move(state));
+                                                     }
+-                                                });
++                                                }, sync_group);
+ 
+             const std::wstring lifecycle_key = L"lock" + std::to_wstring(channel_id);
+             channels_->emplace_back(channel, channel->stage(), lifecycle_key);
