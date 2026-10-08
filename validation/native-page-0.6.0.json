@@ -1,0 +1,82 @@
+{
+  "move-0-0": {
+    "left": [
+      253,
+      0,
+      0
+    ],
+    "right": [
+      253,
+      0,
+      0
+    ]
+  },
+  "audio": {
+    "matched_source": 0.08836924508185998,
+    "muted_source": 6.7494286050740204e-18
+  },
+  "move-0.5-2": {
+    "left": [
+      253,
+      0,
+      0
+    ],
+    "right": [
+      0,
+      127,
+      0
+    ]
+  },
+  "move-1-3": {
+    "left": [
+      253,
+      0,
+      0
+    ],
+    "right": [
+      0,
+      254,
+      0
+    ]
+  },
+  "move-0-4": {
+    "left": [
+      253,
+      0,
+      0
+    ],
+    "right": [
+      253,
+      0,
+      0
+    ]
+  },
+  "PAGE_CURL": {
+    "paper_pixels": 336777,
+    "endpoint": true,
+    "rewind": true
+  },
+  "PAGE_CURL_REVERSE": {
+    "paper_pixels": 336777,
+    "endpoint": true,
+    "rewind": true
+  },
+  "PAGE_ROLL": {
+    "paper_pixels": 236160,
+    "endpoint": true,
+    "rewind": true
+  },
+  "PAGE_ROLL_REVERSE": {
+    "paper_pixels": 236160,
+    "endpoint": true,
+    "rewind": true
+  },
+  "auto_endpoint": true,
+  "background": {
+    "solid_colour": true,
+    "live_change": true,
+    "video_signal_muted": true
+  },
+  "invalid_scene_rejected": true,
+  "invalid_scene_retains_program": true
+}

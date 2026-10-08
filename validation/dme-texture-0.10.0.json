@@ -1,0 +1,348 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.10.0)",
+  "1021": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "rendered_multiview": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "2eeb20ea2ecfe4610d9f85bf87c518921c36b045ebf414a9c9590c36636c1366"
+    }
+  },
+  "1022": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "rendered_multiview": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "a06910e9b632a6618b5519ac99340413ababbc58bc28ece4bb1023f04d6dbe65"
+    }
+  },
+  "1023": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "rendered_multiview": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "af44cf7e79c8e8d7265691d864a97c9b46e4270d75078b6ddebf683635904aba"
+    }
+  },
+  "1024": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "rendered_multiview": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "ef4581ccd84199156aa31b8f844b8e9cc58b4bca7aaee6078e0d116e6d729cee"
+    }
+  },
+  "1025": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "rendered_multiview": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "821a00f1a801759064edb8c10c1ba17ce1d7be3a2aada88922ff8643c7e457ec"
+    }
+  },
+  "1026": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "rendered_multiview": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "eb60ff39aafbe6f3b632e7c74b9b39df2c3d7f65fe153cc65c129b6e57d669cf"
+    }
+  },
+  "1027": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "rendered_multiview": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "0cb37964fe157fee01e2b4734fd8a1072088a57ccdddda443f665b99eb89a462"
+    }
+  },
+  "1028": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "rendered_multiview": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5a746fdb0c38f97e85800d249ccccd8c39e829953e0704f6f00d0877e1e55ea8"
+    }
+  },
+  "1029": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "rendered_multiview": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "4c289e8cecbc5d5df72cf89744ad38a4f4d893cab687b3486a5b49753125d6b5"
+    }
+  },
+  "1030": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "rendered_multiview": {
+        "red": 460800,
+        "blue": 62720
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "6285fb83a6ec46d8dd390a1588c9511ed21c0f4f5d887ba473d1e94f62a30b6e"
+    }
+  },
+  "1031": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "rendered_multiview": {
+        "red": 691200,
+        "blue": 31360
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "69ec6e7dbbaf63bba730eda9cec7424b9813f0210470f9c33b00f39c3e19bbb9"
+    }
+  },
+  "1041": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 162720,
+        "blue": 34449
+      },
+      "rendered_multiview": {
+        "red": 162720,
+        "blue": 34449
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "376362e5fd8f5e9308316e1debad5422ca2e920a1e4940904916d91f005d6b8b"
+    }
+  },
+  "1042": {
+    "sample": [
+      0,
+      64,
+      63
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 162720,
+        "blue": 34449
+      },
+      "rendered_multiview": {
+        "red": 162720,
+        "blue": 34449
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "35bec22d585360d96748736f12678514c276ee86d82b27513bb9c1749544fcda"
+    }
+  },
+  "1043": {
+    "sample": [
+      0,
+      64,
+      63
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 221440,
+        "blue": 115200
+      },
+      "rendered_multiview": {
+        "red": 221440,
+        "blue": 115200
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5b208a253fbd7e6af732ceb7a7649baf3e24859abe3f4b19e23da9e156bdc72b"
+    }
+  },
+  "1044": {
+    "sample": [
+      0,
+      64,
+      64
+    ],
+    "expected_uv": [
+      0.25,
+      0.25
+    ],
+    "capture": {
+      "direct": {
+        "red": 221440,
+        "blue": 78080
+      },
+      "rendered_multiview": {
+        "red": 221440,
+        "blue": 78080
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "c43b771b52f8be9ccd7f473a5fd6f4c8f88271b0c1e8e45f030d266a6c0a9ef5"
+    }
+  }
+}

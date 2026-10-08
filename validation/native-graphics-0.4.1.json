@@ -1,0 +1,11 @@
+{
+  "empty_startup": true,
+  "scene_accepted": true,
+  "meter_updates": true,
+  "green_below_yellow": true,
+  "invalid_values_rejected": true,
+  "invalid_scene_preserves_previous": true,
+  "watchdog": true,
+  "heartbeat_recovery": true,
+  "client_scene_capture": true
+}

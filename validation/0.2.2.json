@@ -1,0 +1,129 @@
+{
+  "one-frame-and-route-cuts": {
+    "frames": 220,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "rendered-orientation": {
+    "frames": 129,
+    "different_frames": [],
+    "reference": "0cfa952bc0219c945e2d1937e3c4364a"
+  },
+  "rendered-nested-composition": {
+    "frames": 202,
+    "different_frames": [],
+    "reference": "0cfa952bc0219c945e2d1937e3c4364a"
+  },
+  "rendered-and-direct-cuts": {
+    "frames": 160,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-same-picture": {
+    "frames": 211,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-soft-border": {
+    "frames": 251,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-timed": {
+    "frames": 280,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-fast-live-draw": {
+    "frames": 103,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-fast-live-gap": {
+    "frames": 104,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "iris-21-aspect-1": {
+    "frames": 39,
+    "different_frames": [],
+    "reference": "029190b8a8dd321681a0a9e50625451e",
+    "width": 256,
+    "height": 256,
+    "ratio": 1.0,
+    "antialiased_pixels": 4
+  },
+  "iris-21-aspect-2": {
+    "frames": 39,
+    "different_frames": [],
+    "reference": "7a0440ef9489ff35f0f621977ea0a870",
+    "width": 288,
+    "height": 144,
+    "ratio": 2.0,
+    "antialiased_pixels": 4
+  },
+  "iris-23-aspect-1": {
+    "frames": 39,
+    "different_frames": [],
+    "reference": "c625b1ea6c8e703f7fc14fbfb5762511",
+    "width": 398,
+    "height": 398,
+    "ratio": 1.0,
+    "antialiased_pixels": 800
+  },
+  "iris-23-aspect-2": {
+    "frames": 40,
+    "different_frames": [],
+    "reference": "db30964d225b1918033e45eb77842561",
+    "width": 540,
+    "height": 270,
+    "ratio": 2.0,
+    "antialiased_pixels": 1088
+  },
+  "iris-24-aspect-1": {
+    "frames": 39,
+    "different_frames": [],
+    "reference": "3fb54b5472df7dc7f414c4948021dc75",
+    "width": 294,
+    "height": 294,
+    "ratio": 1.0,
+    "antialiased_pixels": 1076
+  },
+  "iris-24-aspect-2": {
+    "frames": 39,
+    "different_frames": [],
+    "reference": "e87b8cdd6b22e662d455481d23adc4fe",
+    "width": 384,
+    "height": 192,
+    "ratio": 2.0,
+    "antialiased_pixels": 1036
+  },
+  "rendered-audio": {
+    "windows": 22,
+    "rms": [
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06320135965381757,
+      0.06248620089147958,
+      0.06181471109868302,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06320135951291139,
+      0.06248620070369437,
+      0.06181471143257515,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06320135951291139,
+      0.06248620070369437,
+      0.06181471143257515,
+      0.06248620124325242,
+      0.06248620124325242
+    ],
+    "different_frames": []
+  }
+}

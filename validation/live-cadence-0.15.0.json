@@ -1,0 +1,15 @@
+{
+  "source": "Local real setup, three clips plus stream/HTML inputs, 50 fps sync group",
+  "before": {
+    "measured_fps": 39.6,
+    "media_seconds_per_wall_second": 0.792,
+    "sample_span_seconds": 15
+  },
+  "after": {
+    "measured_fps": 49.99550078489872,
+    "media_seconds_per_wall_second": 0.9999100156979743,
+    "sample_span_seconds": 30.002699771997868
+  },
+  "method": "Monotonic wall time vs channel 1 frame-sync epoch and media elapsed; program/preview active",
+  "limitation": "Sustained overload beyond recovery window can still reduce output rate; this is validation of the current tested load, not unlimited capacity."
+}

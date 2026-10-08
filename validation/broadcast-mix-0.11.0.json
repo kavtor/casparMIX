@@ -1,0 +1,135 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.11.0)",
+  "NAM": {
+    "expected": [
+      224,
+      0,
+      0
+    ],
+    "sample": [
+      224,
+      0,
+      0
+    ],
+    "mid": {
+      "direct": {
+        "red": 921600,
+        "blue": 0
+      },
+      "rendered_multiview": {
+        "red": 921600,
+        "blue": 0
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "d0e66a9ccea33dfe48171bc69030bf16af24caa920d39407f4d46d5cfd1b871a"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 0
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 0
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "1f4bb2607ce644bd8d73a9d7b55e5b23bc6689c04b9df1079a47a15bc0faaf3f"
+    }
+  },
+  "SUPER_MIX": {
+    "expected": [
+      224,
+      0,
+      160
+    ],
+    "sample": [
+      224,
+      0,
+      160
+    ],
+    "mid": {
+      "direct": {
+        "red": 0,
+        "blue": 0
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 0
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "2624bfc03c7153d087785dd6b0c3b7280902790c04de5c662232ffbc704e2b0c"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 0
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 0
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "1f4bb2607ce644bd8d73a9d7b55e5b23bc6689c04b9df1079a47a15bc0faaf3f"
+    }
+  },
+  "SUPER_MIX-gains": {
+    "expected": [
+      112,
+      0,
+      40
+    ],
+    "sample": [
+      112,
+      0,
+      40
+    ],
+    "mid": {
+      "direct": {
+        "red": 0,
+        "blue": 0
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 0
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "a1028de46c7c404df3d1ec02d32c50394ba481f1ba99e380b14bb1a96b0d27a2",
+      "live_gain_update": {
+        "direct": {
+          "red": 0,
+          "blue": 0
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 0
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "fcf5bf37fed6118dce455f37f5bea750d200ee0b2be6c562b86e8e6d1697446f"
+      },
+      "invalid_gain_preserves_state": {
+        "direct": {
+          "red": 0,
+          "blue": 0
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 0
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "fcf5bf37fed6118dce455f37f5bea750d200ee0b2be6c562b86e8e6d1697446f"
+      }
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 0
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 0
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "1f4bb2607ce644bd8d73a9d7b55e5b23bc6689c04b9df1079a47a15bc0faaf3f"
+    }
+  }
+}

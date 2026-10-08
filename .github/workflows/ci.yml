@@ -1,0 +1,11 @@
+name: Patch validation
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m compileall -q tools
+      - run: python3 tools/verify_release.py --release releases/casparMIX-0.17.0-casparcg-2.5.1

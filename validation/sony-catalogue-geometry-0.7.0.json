@@ -1,0 +1,164 @@
+{
+  "1": {
+    "samples": 1728,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "2": {
+    "samples": 1728,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "3": {
+    "samples": 1664,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "4": {
+    "samples": 1664,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "5": {
+    "samples": 1696,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "6": {
+    "samples": 1696,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "7": {
+    "samples": 1696,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "8": {
+    "samples": 1696,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "9": {
+    "samples": 1692,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "10": {
+    "samples": 1696,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "11": {
+    "samples": 1692,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "12": {
+    "samples": 1696,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "17": {
+    "samples": 1728,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "18": {
+    "samples": 1536,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "21": {
+    "samples": 1728,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "22": {
+    "samples": 1632,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "23": {
+    "samples": 1692,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  },
+  "24": {
+    "samples": 1667,
+    "progress": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "geometry": true
+  }
+}

@@ -1,0 +1,67 @@
+diff --git a/src/accelerator/ogl/image/image_kernel.cpp b/src/accelerator/ogl/image/image_kernel.cpp
+index 50a7bbb7da96221e3c1985386e2a74312cf73b90..16d1c4f41ab37a26d24c4f6a39b6659fff60389e 100644
+--- a/src/accelerator/ogl/image/image_kernel.cpp
++++ b/src/accelerator/ogl/image/image_kernel.cpp
+@@ -230,6 +230,7 @@ struct image_kernel::impl
+             shader_->set("sony_soft", wipe.soft / 270.0);
+             shader_->set("sony_border", wipe.border / 540.0);
+             shader_->set("sony_aspect", wipe.aspect);
++            shader_->set("sony_output_aspect", params.aspect_ratio);
+             shader_->set("sony_multi", wipe.multi);
+             shader_->set("sony_center", wipe.x, wipe.y);
+             shader_->set("sony_reverse", wipe.reverse);
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 0a22b4d84337223ce1f2092502b040d20d13e5db..2fc0d77206c7e74322ff2371f942ae0383daeab7 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -527,17 +527,20 @@ uniform float sony_progress;
+ uniform float sony_soft;
+ uniform float sony_border;
+ uniform float sony_aspect;
++uniform float sony_output_aspect;
+ uniform int sony_multi;
+ uniform vec2 sony_center;
+ uniform bool sony_reverse;
+ 
+-float sony_distance(vec2 p, float t)
++float sony_distance(vec2 p, float t, float cell_aspect)
+ {
+     vec2 q = p - sony_center;
+     vec2 extent = max(sony_center, vec2(1.0) - sony_center);
+     float ar = max(sony_aspect, 0.01);
+-    q.x /= ar;
+-    extent.x /= ar;
++    // Distances are measured in cell-height units, not normalized screen X/Y.
++    // At neutral ASPECT the iris remains round/square in displayed pixels.
++    q.x *= cell_aspect / ar;
++    extent.x *= cell_aspect / ar;
+     if (sony_code == 1) return t - p.x;
+     if (sony_code == 3) return t - p.y;
+     if (sony_code == 5) return t - max(p.x, p.y);
+@@ -552,7 +555,9 @@ float sony_distance(vec2 p, float t)
+ 
+ float sony_coverage(float distance, float softness)
+ {
+-    return softness > 0.0 ? smoothstep(-softness, softness, distance) : step(0.0, distance);
++    // One pixel of geometric antialiasing also applies to a hard edge.
++    float width = max(softness, max(0.5*fwidth(distance), 0.0000001));
++    return smoothstep(-width, width, distance);
+ }
+ 
+ float sony_matte(vec2 packed_uv)
+@@ -570,7 +575,7 @@ float sony_matte(vec2 packed_uv)
+     float t = clamp(sony_progress, 0.0, 1.0);
+     if (t <= 0.0) return sony_role != 0 ? 0.0 : outgoing ? 1.0 : 0.0;
+     if (t >= 1.0) return sony_role == 2 ? 0.0 : sony_role == 1 ? 1.0 : outgoing ? 0.0 : 1.0;
+-    float d = sony_distance(p, sony_reverse ? 1.0-t : t);
++    float d = sony_distance(p, sony_reverse ? 1.0-t : t, sony_output_aspect*grid.y/grid.x);
+     if (sony_reverse) d = -d;
+     if (sony_role == 1) return sony_coverage(d, sony_soft);
+     float inner = sony_coverage(d-sony_border, sony_soft);
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 0ea3a944b399d25f7e1b8fe684d754eb8da9fe7f..0c62199f16ac1e2d7f7ae75b420c1231325dff4e 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.2.0
++0.2.1

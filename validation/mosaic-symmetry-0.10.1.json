@@ -1,0 +1,921 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.10.1)",
+  "250-size10": {
+    "direct": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "4c81621c2c77564a7de6987c07f4d41889d8f95b8263cca7eb6ee4774c840320",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "251-size10": {
+    "direct": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "188087a01dcfa19a6c17229a804de15a1349fbd149364432ca394ea40e758ca7",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "252-size10": {
+    "direct": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "cf87ba529489261d1d5c99f695786c1f8a5ec7ec7d36dadf713bee938a776373",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "253-size10": {
+    "direct": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "4c66ab15929fb7a938838eb3386825b147b36034606e3d533bd47b8fb5b10630",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "254-size10": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "d200d09bcc177b2a194d997db6050cd30769bae3f1cad8988b3e64fb0c0757f8",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "255-size10": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "5da9eb8de2999df46ded05c5ad215e0b546f1e779cbaa587145658e4b5d3353b",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "256-size10": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "864d27778bdf6530812301ee0cbbc5751a357418f255d5381daeb9ebbb82717b",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "257-size10": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "781a0d960ce0645ecb7b581d3a204f0729c929c2257af1772afefe62d336ea16",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "260-size10": {
+    "direct": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "3f612504a12e928d359fb3efd1ab8a1e9c0b1cceaccb34ee49cd0d2fef6ec339",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "261-size10": {
+    "direct": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "89a8a4c6d2778e065c256669a9dd14ad99a971d70fc39aff65fee8822f23e6c1",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "262-size10": {
+    "direct": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "4c55a1422b72fb4413991106236fda17deae380a330abfa204c36d54e5ad6cdd",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "263-size10": {
+    "direct": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 455040,
+      "red_pixels": 466560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "cb9653f2e9266d268446182a09221cce76427e1dada8e1fdd5e52af229c6166b",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "264-size10": {
+    "direct": {
+      "blue_pixels": 465408,
+      "red_pixels": 456192
+    },
+    "rendered_multiview": {
+      "blue_pixels": 465408,
+      "red_pixels": 456192
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "d40275c0b4a0928f44184a342b57ba1735e2eba2796d9a70f64772f2573d68d0",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "265-size10": {
+    "direct": {
+      "blue_pixels": 467712,
+      "red_pixels": 453888
+    },
+    "rendered_multiview": {
+      "blue_pixels": 467712,
+      "red_pixels": 453888
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "6c99212272a77be4b10316cbd4bef9c3708dd95c4d7742789aff00fed741522f",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "266-size10": {
+    "direct": {
+      "blue_pixels": 491904,
+      "red_pixels": 429696
+    },
+    "rendered_multiview": {
+      "blue_pixels": 491904,
+      "red_pixels": 429696
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "e4ba76113cbb360afde92f20b8de87c34c4ece39d6d79d959fc74d384f827efc",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "267-size10": {
+    "direct": {
+      "blue_pixels": 491904,
+      "red_pixels": 429696
+    },
+    "rendered_multiview": {
+      "blue_pixels": 491904,
+      "red_pixels": 429696
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "d4a695c01e00dfde7e677669a8f10bfa58e15a34651e80de5d130e8b817e18c3",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "268-size10": {
+    "direct": {
+      "blue_pixels": 506880,
+      "red_pixels": 414720
+    },
+    "rendered_multiview": {
+      "blue_pixels": 506880,
+      "red_pixels": 414720
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "ea3ea24f263be953d1b868a2fe07aa7b0b6cf31b67c37969dd8d3c7723d2d922",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "269-size10": {
+    "direct": {
+      "blue_pixels": 506880,
+      "red_pixels": 414720
+    },
+    "rendered_multiview": {
+      "blue_pixels": 506880,
+      "red_pixels": 414720
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "99bee94aacba3356065a11335b022c2c5cb0689c7305f9a849794a21773d78f9",
+    "grid": [
+      18,
+      10
+    ],
+    "centered_edge_clipping": true
+  },
+  "250-size20": {
+    "direct": {
+      "blue_pixels": 527616,
+      "red_pixels": 393984
+    },
+    "rendered_multiview": {
+      "blue_pixels": 527616,
+      "red_pixels": 393984
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "26716f2bcee9123f1f7c7dba736c6840ed0ca988ddd1db1b9ed06210876c9a24",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "251-size20": {
+    "direct": {
+      "blue_pixels": 527616,
+      "red_pixels": 393984
+    },
+    "rendered_multiview": {
+      "blue_pixels": 527616,
+      "red_pixels": 393984
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "36c3da99f8c2b21bc1feebf73cb43835effbba081244e09788ecdbe5c718c8c6",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "252-size20": {
+    "direct": {
+      "blue_pixels": 527616,
+      "red_pixels": 393984
+    },
+    "rendered_multiview": {
+      "blue_pixels": 527616,
+      "red_pixels": 393984
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "8160fac7a8e80a85273fc8a31f5dd7eb55d12b6332905c669db1fd70364a0d73",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "253-size20": {
+    "direct": {
+      "blue_pixels": 527616,
+      "red_pixels": 393984
+    },
+    "rendered_multiview": {
+      "blue_pixels": 527616,
+      "red_pixels": 393984
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "f8fed1552be37d37bd37ad6fcf9be2524a1d19e0c4123cbae093237617e63c8c",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "254-size20": {
+    "direct": {
+      "blue_pixels": 573696,
+      "red_pixels": 347904
+    },
+    "rendered_multiview": {
+      "blue_pixels": 573696,
+      "red_pixels": 347904
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "31bdecf6ca796cca06fb5cc6b7429462886631a025239d0381c46e7363f4024b",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "255-size20": {
+    "direct": {
+      "blue_pixels": 573696,
+      "red_pixels": 347904
+    },
+    "rendered_multiview": {
+      "blue_pixels": 573696,
+      "red_pixels": 347904
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "a40c50c1b2883c198beaff371067147ac1570be80d2f6ce2350a57fe45a61189",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "256-size20": {
+    "direct": {
+      "blue_pixels": 573696,
+      "red_pixels": 347904
+    },
+    "rendered_multiview": {
+      "blue_pixels": 573696,
+      "red_pixels": 347904
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "8712c7fb6ea217cdbf853d626c3511d0e2e455ff3c4a5e8af3d61030f67789a9",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "257-size20": {
+    "direct": {
+      "blue_pixels": 573696,
+      "red_pixels": 347904
+    },
+    "rendered_multiview": {
+      "blue_pixels": 573696,
+      "red_pixels": 347904
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "c132d36cb08eb21b4f61104a23691af10194fc4e6ccf8b765a5e698ca3d27f08",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "260-size20": {
+    "direct": {
+      "blue_pixels": 423936,
+      "red_pixels": 497664
+    },
+    "rendered_multiview": {
+      "blue_pixels": 423936,
+      "red_pixels": 497664
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "4da5edf41319b948287980f5e537509cc74b53c0e4b99d5f44897c021a8cd6e5",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "261-size20": {
+    "direct": {
+      "blue_pixels": 423936,
+      "red_pixels": 497664
+    },
+    "rendered_multiview": {
+      "blue_pixels": 423936,
+      "red_pixels": 497664
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "70a43c2dc69c6eedef5ac9df90a9b5b7400e67cd8642a013882d4cdc400fdf82",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "262-size20": {
+    "direct": {
+      "blue_pixels": 489600,
+      "red_pixels": 432000
+    },
+    "rendered_multiview": {
+      "blue_pixels": 489600,
+      "red_pixels": 432000
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "b60c354e3b5e0e9bd613e93a0f19f507147252946dabd90ddca63923cf0b40a5",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "263-size20": {
+    "direct": {
+      "blue_pixels": 489600,
+      "red_pixels": 432000
+    },
+    "rendered_multiview": {
+      "blue_pixels": 489600,
+      "red_pixels": 432000
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "288f55e94848a8cc3e78dc532e79be6aaea845507021a9da96a4f4a53e1adfa0",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "264-size20": {
+    "direct": {
+      "blue_pixels": 382464,
+      "red_pixels": 539136
+    },
+    "rendered_multiview": {
+      "blue_pixels": 382464,
+      "red_pixels": 539136
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "d64a4ce6780df1d39cdbf1522e0c85bc93d2b8fd3bd42dab0f2e09aa4e995ac2",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "265-size20": {
+    "direct": {
+      "blue_pixels": 472320,
+      "red_pixels": 449280
+    },
+    "rendered_multiview": {
+      "blue_pixels": 472320,
+      "red_pixels": 449280
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "949e9bd16b4beb89058e2c3e5e55f025ed977731c6b724e34cd247e290513996",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "266-size20": {
+    "direct": {
+      "blue_pixels": 533376,
+      "red_pixels": 388224
+    },
+    "rendered_multiview": {
+      "blue_pixels": 533376,
+      "red_pixels": 388224
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "163f5827dc084ec2b715287804c8e432ca46f56f49411df2e5ae08c9d5bb7c44",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "267-size20": {
+    "direct": {
+      "blue_pixels": 533376,
+      "red_pixels": 388224
+    },
+    "rendered_multiview": {
+      "blue_pixels": 533376,
+      "red_pixels": 388224
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "d69201e85bae4e48f9fa255accc6bdd0d0097c9eb82e3f74a9f2a5c06510d8a9",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "268-size20": {
+    "direct": {
+      "blue_pixels": 552960,
+      "red_pixels": 368640
+    },
+    "rendered_multiview": {
+      "blue_pixels": 552960,
+      "red_pixels": 368640
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "bab8674258f0fd9dce35b0cf07e0091122f02a2ec3c2104698ec4d7ff92b528e",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "269-size20": {
+    "direct": {
+      "blue_pixels": 552960,
+      "red_pixels": 368640
+    },
+    "rendered_multiview": {
+      "blue_pixels": 552960,
+      "red_pixels": 368640
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "fc984ffc0726d323d2fe8c9a930008e1e2f3ebb497683e4d4547b94b2791abcc",
+    "grid": [
+      9,
+      5
+    ],
+    "centered_edge_clipping": true
+  },
+  "250-size25": {
+    "direct": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "rendered_multiview": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "a64010dccf3d74c94c4988bb251a1f92b22f5f10d3c91336e53700bb4f92649d",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "251-size25": {
+    "direct": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "rendered_multiview": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "a64010dccf3d74c94c4988bb251a1f92b22f5f10d3c91336e53700bb4f92649d",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "252-size25": {
+    "direct": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "rendered_multiview": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "a64010dccf3d74c94c4988bb251a1f92b22f5f10d3c91336e53700bb4f92649d",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "253-size25": {
+    "direct": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "rendered_multiview": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "a64010dccf3d74c94c4988bb251a1f92b22f5f10d3c91336e53700bb4f92649d",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "254-size25": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0e2bf5fad7ee268dc299fb800fb1cb8039466b700d3575a9c55f1b0ce3d4e269",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "255-size25": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0e2bf5fad7ee268dc299fb800fb1cb8039466b700d3575a9c55f1b0ce3d4e269",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "256-size25": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0e2bf5fad7ee268dc299fb800fb1cb8039466b700d3575a9c55f1b0ce3d4e269",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "257-size25": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0e2bf5fad7ee268dc299fb800fb1cb8039466b700d3575a9c55f1b0ce3d4e269",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "260-size25": {
+    "direct": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "rendered_multiview": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "b480a23ca1ae1a03439b44aefe1a791c3e130bdd90c2be527a4d03e08f3ddf8b",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "261-size25": {
+    "direct": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "rendered_multiview": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "1fe99b3974f3a1c4bbfcdc26a15ea898472fe683bb45523ab638c0a72f7e0b74",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "262-size25": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0e2bf5fad7ee268dc299fb800fb1cb8039466b700d3575a9c55f1b0ce3d4e269",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "263-size25": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0e2bf5fad7ee268dc299fb800fb1cb8039466b700d3575a9c55f1b0ce3d4e269",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "264-size25": {
+    "direct": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "rendered_multiview": {
+      "blue_pixels": 403200,
+      "red_pixels": 518400
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0f8eed0a0844654b983a16b507dac5a7ca23586dd9433d2128d90d0299b40282",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "265-size25": {
+    "direct": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "rendered_multiview": {
+      "blue_pixels": 460800,
+      "red_pixels": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0e2bf5fad7ee268dc299fb800fb1cb8039466b700d3575a9c55f1b0ce3d4e269",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "266-size25": {
+    "direct": {
+      "blue_pixels": 558000,
+      "red_pixels": 363600
+    },
+    "rendered_multiview": {
+      "blue_pixels": 558000,
+      "red_pixels": 363600
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "87a7e83f9f6fe02a3fc5b0642e32b27d2109835d3c22dc1f9a9229377e7b5a54",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "267-size25": {
+    "direct": {
+      "blue_pixels": 558000,
+      "red_pixels": 363600
+    },
+    "rendered_multiview": {
+      "blue_pixels": 558000,
+      "red_pixels": 363600
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "8c60690e21769390d5242bc3bf14c4a29ec6815d658ba6cc06371d5210cad351",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "268-size25": {
+    "direct": {
+      "blue_pixels": 608400,
+      "red_pixels": 313200
+    },
+    "rendered_multiview": {
+      "blue_pixels": 608400,
+      "red_pixels": 313200
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "063c73dccd48d530e61feea5bcf2f0fb1e63fd26183d5dc984805e842bff232b",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  },
+  "269-size25": {
+    "direct": {
+      "blue_pixels": 608400,
+      "red_pixels": 313200
+    },
+    "rendered_multiview": {
+      "blue_pixels": 608400,
+      "red_pixels": 313200
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "4f32510dd6b9fc37d2d2dbf2b9aadf46001f229c072714164ab2cb054c1f6907",
+    "grid": [
+      8,
+      4
+    ],
+    "centered_edge_clipping": true
+  }
+}
