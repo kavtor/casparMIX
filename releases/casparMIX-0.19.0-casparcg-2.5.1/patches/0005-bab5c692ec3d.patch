@@ -1,0 +1,287 @@
+diff --git a/src/accelerator/ogl/image/image_mixer.cpp b/src/accelerator/ogl/image/image_mixer.cpp
+index e3e6eb5d6576581eb00ea1ac1093177448006d4c..4d3a03b9cda5bff50d715b3f44a4de570d07a447 100644
+--- a/src/accelerator/ogl/image/image_mixer.cpp
++++ b/src/accelerator/ogl/image/image_mixer.cpp
+@@ -89,7 +89,7 @@ class image_renderer
+     }
+ 
+     std::future<std::tuple<array<const std::uint8_t>, std::shared_ptr<core::texture>>>
+-    operator()(std::vector<layer> layers, const core::video_format_desc& format_desc)
++    operator()(std::vector<layer> layers, const core::video_format_desc& format_desc, bool readback)
+     {
+         if (layers.empty()) { // Bypass GPU with empty frame.
+             static const std::vector<uint8_t, boost::alignment::aligned_allocator<uint8_t, 32>> buffer(max_frame_size_,
+@@ -104,7 +104,9 @@ class image_renderer
+                                      -> std::tuple<std::future<array<const std::uint8_t>>, std::shared_ptr<core::texture>> {
+             auto target_texture = ogl_->create_texture(format_desc.width, format_desc.height, 4, depth_);
+             draw(target_texture, std::move(layers), format_desc);
+-            return { ogl_->copy_async(target_texture), target_texture };
++            // Route-only channels retain their GPU texture without CPU readback.
++            return { readback ? ogl_->copy_async(target_texture)
++                              : make_ready_future(array<const std::uint8_t>{}), target_texture };
+         }));
+ 
+         return std::async(std::launch::deferred, [f = std::move(f)]() mutable
+@@ -308,10 +310,15 @@ struct image_mixer::impl
+         item.transforms = transform_stack_.back();
+         item.geometry   = frame.geometry();
+ 
+-        auto textures_ptr = std::any_cast<std::shared_ptr<std::vector<future_texture>>>(frame.opaque());
++        auto textures_ptr = std::any_cast<std::shared_ptr<std::vector<future_texture>>>(&frame.opaque());
++        auto rendered_texture = std::dynamic_pointer_cast<texture>(frame.texture());
+ 
+-        if (textures_ptr) {
+-            item.textures = *textures_ptr;
++        if (rendered_texture) {
++            // All channels of this accelerator share the same OpenGL device.
++            // Reuse the completed composition; never upload its CPU copy again.
++            item.textures.emplace_back(make_ready_future(std::move(rendered_texture)).share());
++        } else if (textures_ptr && *textures_ptr) {
++            item.textures = **textures_ptr;
+         } else {
+             for (int n = 0; n < static_cast<int>(item.pix_desc.planes.size()); ++n) {
+                 item.textures.emplace_back(ogl_->copy_async(frame.image_data(n),
+@@ -332,9 +339,9 @@ struct image_mixer::impl
+     }
+ 
+     std::future<std::tuple<array<const std::uint8_t>, std::shared_ptr<core::texture>>>
+-    render(const core::video_format_desc& format_desc)
++    render(const core::video_format_desc& format_desc, bool readback)
+     {
+-        return renderer_(std::move(layers_), format_desc);
++        return renderer_(std::move(layers_), format_desc, readback);
+     }
+ 
+     core::mutable_frame create_frame(const void* tag, const core::pixel_format_desc& desc) override
+@@ -429,9 +436,9 @@ void image_mixer::visit(const core::const_frame& frame) { impl_->visit(frame); }
+ void image_mixer::pop() { impl_->pop(); }
+ void image_mixer::update_aspect_ratio(double aspect_ratio) { impl_->update_aspect_ratio(aspect_ratio); }
+ std::future<std::tuple<array<const std::uint8_t>, std::shared_ptr<core::texture>>>
+-image_mixer::render(const core::video_format_desc& format_desc)
++image_mixer::render(const core::video_format_desc& format_desc, bool readback)
+ {
+-    return impl_->render(format_desc);
++    return impl_->render(format_desc, readback);
+ }
+ core::mutable_frame image_mixer::create_frame(const void* tag, const core::pixel_format_desc& desc)
+ {
+diff --git a/src/accelerator/ogl/image/image_mixer.h b/src/accelerator/ogl/image/image_mixer.h
+index c7cb63ea840b53e50dc478dd81941ae19a28f8e1..208bc03bcf7962dc514c9b64ac121117436376b0 100644
+--- a/src/accelerator/ogl/image/image_mixer.h
++++ b/src/accelerator/ogl/image/image_mixer.h
+@@ -48,7 +48,7 @@ class image_mixer final : public core::image_mixer
+     image_mixer& operator=(const image_mixer&) = delete;
+ 
+     std::future<std::tuple<array<const std::uint8_t>, std::shared_ptr<core::texture>>>
+-                        render(const core::video_format_desc& format_desc) override;
++                        render(const core::video_format_desc& format_desc, bool readback = true) override;
+     core::mutable_frame create_frame(const void* tag, const core::pixel_format_desc& desc) override;
+     core::mutable_frame
+     create_frame(const void* video_stream_tag, const core::pixel_format_desc& desc, common::bit_depth depth) override;
+diff --git a/src/core/mixer/image/image_mixer.h b/src/core/mixer/image/image_mixer.h
+index c4be82bbd44daaa6442e6b5e091c0fbd25c7ece1..3bb54aae78ebfd94e460801fb979e73f9a5e5e82 100644
+--- a/src/core/mixer/image/image_mixer.h
++++ b/src/core/mixer/image/image_mixer.h
+@@ -49,7 +49,7 @@ class image_mixer
+     virtual void update_aspect_ratio(double aspect_ratio) = 0;
+ 
+     virtual std::future<std::tuple<array<const std::uint8_t>, std::shared_ptr<texture>>>
+-    render(const struct video_format_desc& format_desc) = 0;
++    render(const struct video_format_desc& format_desc, bool readback = true) = 0;
+ 
+     class mutable_frame create_frame(const void* tag, const struct pixel_format_desc& desc) override = 0;
+     class mutable_frame create_frame(const void*                     video_stream_tag,
+diff --git a/src/core/mixer/mixer.cpp b/src/core/mixer/mixer.cpp
+index 1129124c5b1fa5fec152439d19433139ce2c85f8..b676f5f08821afbb881e62610a85f391834b21e3 100644
+--- a/src/core/mixer/mixer.cpp
++++ b/src/core/mixer/mixer.cpp
+@@ -60,7 +60,7 @@ struct mixer::impl
+     {
+     }
+ 
+-    const_frame operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples)
++    const_frame operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples, bool readback)
+     {
+         image_mixer_->update_aspect_ratio(static_cast<double>(format_desc.square_width) /
+                                           static_cast<double>(format_desc.square_height));
+@@ -71,7 +71,7 @@ struct mixer::impl
+             frame.accept(*image_mixer_);
+         }
+ 
+-        auto result  = image_mixer_->render(format_desc);
++        auto result  = image_mixer_->render(format_desc, readback);
+         auto audio   = audio_mixer_(format_desc, nb_samples);
+ 
+         state_["audio"] = audio_mixer_.state();
+@@ -122,9 +122,9 @@ mixer::mixer(int channel_index, spl::shared_ptr<diagnostics::graph> graph, spl::
+ }
+ void        mixer::set_master_volume(float volume) { impl_->set_master_volume(volume); }
+ float       mixer::get_master_volume() { return impl_->get_master_volume(); }
+-const_frame mixer::operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples)
++const_frame mixer::operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples, bool readback)
+ {
+-    return (*impl_)(std::move(frames), format_desc, nb_samples);
++    return (*impl_)(std::move(frames), format_desc, nb_samples, readback);
+ }
+ void mixer::meter_audio(const std::vector<draw_frame>& frames, const video_format_desc& format_desc, int nb_samples)
+ {
+diff --git a/src/core/mixer/mixer.h b/src/core/mixer/mixer.h
+index a7bb01e283e9cabe3ed6f160a9c2538a671f93fb..7176d45c89f08b0061ed0929e1b3c3e61493d3f7 100644
+--- a/src/core/mixer/mixer.h
++++ b/src/core/mixer/mixer.h
+@@ -43,7 +43,7 @@ class mixer final
+                    spl::shared_ptr<caspar::diagnostics::graph> graph,
+                    spl::shared_ptr<image_mixer>                image_mixer);
+ 
+-    const_frame operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples);
++    const_frame operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples, bool readback = true);
+ 
+     void meter_audio(const std::vector<draw_frame>& frames, const video_format_desc& format_desc, int nb_samples);
+ 
+diff --git a/src/core/producer/route/route_producer.cpp b/src/core/producer/route/route_producer.cpp
+index f9896fec78105583049208e738e24b1c8a1b3dbb..673389dabef344d36a4bac7ec4c0836931e5efd7 100644
+--- a/src/core/producer/route/route_producer.cpp
++++ b/src/core/producer/route/route_producer.cpp
+@@ -305,6 +305,11 @@ spl::shared_ptr<core::frame_producer> create_route_producer(const core::frame_pr
+     auto layer   = what["LAYER"].matched ? std::stoi(what["LAYER"].str()) : -1;
+ 
+     auto mode = core::route_mode::foreground;
++    if (contains_param(L"RENDERED", params)) {
++        if (layer >= 0)
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"RENDERED requires a whole-channel route from another channel"));
++        mode = core::route_mode::rendered;
++    }
+     if (layer >= 0) {
+         if (contains_param(L"BACKGROUND", params))
+             mode = core::route_mode::background;
+@@ -321,6 +326,9 @@ spl::shared_ptr<core::frame_producer> create_route_producer(const core::frame_pr
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"No channel with id " + std::to_wstring(channel)));
+     }
+ 
++    if (mode == core::route_mode::rendered && (*channel_it)->frame_factory() == dependencies.frame_factory)
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"A channel cannot render-route its own output"));
++
+     auto buffer = get_param(L"BUFFER", params, 0);
+     auto rp     = spl::make_shared<route_producer>((*channel_it)->route(layer, mode), dependencies.format_desc, buffer, channel, layer);
+     rp->connect_slot();
+diff --git a/src/core/video_channel.cpp b/src/core/video_channel.cpp
+index c95455056dbfd4291bf10061bc0bbffa8975b036..3e21072025252fc77ef6d0862adff8930ba9261a 100644
+--- a/src/core/video_channel.cpp
++++ b/src/core/video_channel.cpp
+@@ -43,12 +43,18 @@
+ 
+ #include <mutex>
+ #include <string>
++#include <tuple>
+ #include <unordered_map>
+ #include <utility>
+ 
+ namespace caspar { namespace core {
+ 
+-bool operator<(const route_id& a, const route_id& b) { return a.mode + (a.index << 2) < b.mode + (b.index << 2); }
++bool operator<(const route_id& a, const route_id& b)
++{
++    // Whole-channel routes use index -1. Shifting a negative signed index is
++    // undefined, and packing an expanding mode enum can alias distinct routes.
++    return std::tie(a.index, a.mode) < std::tie(b.index, b.mode);
++}
+ 
+ struct video_channel::impl final
+ {
+@@ -81,7 +87,7 @@ struct video_channel::impl final
+         std::lock_guard<std::mutex> lock(routes_mutex_);
+         for (auto& r : routes_) {
+             // if this layer is the source for this route, push the frame to the route producers
+-            if (layer == r.first.index) {
++            if (layer == r.first.index && r.first.mode != route_mode::rendered) {
+                 auto route = r.second.lock();
+                 if (!route)
+                     continue;
+@@ -143,7 +149,7 @@ struct video_channel::impl final
+                             if (!r.second.lock())
+                                 continue;
+ 
+-                            if (r.first.mode != route_mode::foreground) {
++                            if (r.first.mode != route_mode::foreground && r.first.mode != route_mode::rendered) {
+                                 background_routes.push_back(r.first.index);
+                             }
+                         }
+@@ -156,20 +162,29 @@ struct video_channel::impl final
+ 
+                     // This is a little race prone, but at worst a new consumer will start with a frame of black
+                     bool has_consumers = output_.consumer_count() > 0;
++                    std::vector<std::shared_ptr<core::route>> rendered_routes;
++                    {
++                        std::lock_guard<std::mutex> lock(routes_mutex_);
++                        for (const auto& entry : routes_)
++                            if (entry.first.mode == route_mode::rendered)
++                                if (auto route = entry.second.lock())
++                                    rendered_routes.push_back(std::move(route));
++                    }
++                    const bool needs_render = has_consumers || !rendered_routes.empty();
+ 
+                     // Mix
+                     caspar::timer mix_timer;
+                     auto          mixed_frame =
+-                        has_consumers ? mixer_(stage_frames.frames, stage_frames.format_desc, stage_frames.nb_samples)
++                        needs_render ? mixer_(stage_frames.frames, stage_frames.format_desc, stage_frames.nb_samples, has_consumers)
+                                                : const_frame{};
+                     auto mixed_frame2 =
+-                        has_consumers && stage_frames.format_desc.field_count == 2
+-                            ? mixer_(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples)
++                        needs_render && stage_frames.format_desc.field_count == 2
++                            ? mixer_(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples, has_consumers)
+                             : const_frame{};
+                     graph_->set_value("mix-time", mix_timer.elapsed() * format_desc.hz * 0.5);
+ 
+                     // Audio metering does not require a full-frame video render.
+-                    if (!has_consumers) {
++                    if (!needs_render) {
+                         mixer_.meter_audio(stage_frames.frames, stage_frames.format_desc, stage_frames.nb_samples);
+                         if (stage_frames.format_desc.field_count == 2)
+                             mixer_.meter_audio(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples);
+@@ -177,7 +192,20 @@ struct video_channel::impl final
+ 
+                     // Consume
+                     caspar::timer consume_timer;
+-                    output_(mixed_frame, mixed_frame2, stage_frames.format_desc);
++                    // Publish outside routes_mutex_: callbacks can retire routes.
++                    // A mixed const_frame contains exactly one audio mix and an
++                    // isolated image, so destination transforms cannot alter keys.
++                    if (mixed_frame) {
++                        for (const auto& route : rendered_routes)
++                            route->signal(draw_frame(mixed_frame), mixed_frame2 ? draw_frame(mixed_frame2) : draw_frame{});
++                    }
++                    // GPU-only frames must never reach CPU image consumers.
++                    // During consumer hot-plug, let them hold their last frame
++                    // until the normal readback pipeline is primed.
++                    const bool cpu_ready = has_consumers && mixed_frame && mixed_frame.size() > 0 &&
++                        (stage_frames.format_desc.field_count == 1 || (mixed_frame2 && mixed_frame2.size() > 0));
++                    output_(cpu_ready ? mixed_frame : const_frame{},
++                            cpu_ready ? mixed_frame2 : const_frame{}, stage_frames.format_desc);
+                     graph_->set_value("consume-time", consume_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
+ 
+                     graph_->set_value("frame-time", frame_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
+@@ -225,7 +253,9 @@ struct video_channel::impl final
+             if (index != -1) {
+                 route->name += L"/" + std::to_wstring(index);
+             }
+-            if (mode == route_mode::background) {
++            if (mode == route_mode::rendered) {
++                route->name += L"/rendered";
++            } else if (mode == route_mode::background) {
+                 route->name += L"/background";
+             } else if (mode == route_mode::next) {
+                 route->name += L"/next";
+diff --git a/src/core/video_channel.h b/src/core/video_channel.h
+index 43be5934a7f3d3a9eb870ba3001c23f4017b039b..7b0d54fc00f4428672fc3eb75ddaf585666cfb7c 100644
+--- a/src/core/video_channel.h
++++ b/src/core/video_channel.h
+@@ -41,6 +41,7 @@ enum route_mode
+     foreground,
+     background,
+     next, // background if any, otherwise foreground
++    rendered, // complete channel composition, sampled after the mixer
+ };
+ 
+ struct route_id

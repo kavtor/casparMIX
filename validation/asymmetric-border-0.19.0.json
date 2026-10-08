@@ -1,0 +1,102 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.19.0)",
+  "0": {
+    "direct": {
+      "red": 450720,
+      "blue": 450720
+    },
+    "rendered_multiview": {
+      "red": 450720,
+      "blue": 450720
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "ccc565806fa4b7febd53e9043aa275fa3a19310c18923aa8c582845cf4f81136",
+    "green_centroid_x": 639.5,
+    "soft": {
+      "direct": {
+        "red": 448560,
+        "blue": 435600
+      },
+      "rendered_multiview": {
+        "red": 448560,
+        "blue": 435600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "1314812294e8943c53313e58270ed852e836dd45f587d7ffc0d655412f6d8577"
+    }
+  },
+  "-1": {
+    "direct": {
+      "red": 460800,
+      "blue": 441360
+    },
+    "rendered_multiview": {
+      "red": 460800,
+      "blue": 441360
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "b76dc8bb72bd2ad2552943d13a11e46ffb908bb8e2d23a486ae18c7699df6899",
+    "green_centroid_x": 626.5,
+    "soft": {
+      "direct": {
+        "red": 457920,
+        "blue": 426240
+      },
+      "rendered_multiview": {
+        "red": 457920,
+        "blue": 426240
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "8f6cd22e414942d81ba09967d38ed42235aae84587cc0ff5b6e9cb9e0a1ad2f4"
+    }
+  },
+  "1": {
+    "direct": {
+      "red": 441360,
+      "blue": 460800
+    },
+    "rendered_multiview": {
+      "red": 441360,
+      "blue": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0d2f2707aedeac51b37c53483ea7bfe9eeb4505d9ffb392327c741a45b08557b",
+    "green_centroid_x": 652.5,
+    "soft": {
+      "direct": {
+        "red": 439200,
+        "blue": 444960
+      },
+      "rendered_multiview": {
+        "red": 439200,
+        "blue": 444960
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "67581891e54e9af04fb0ae1f350962b63d185e45a8b29bf854fe84bda8980003"
+    }
+  },
+  "start": {
+    "direct": {
+      "red": 921600,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 921600,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "e7d80c4da43684a7682b0b0bcba80b1bebf618f2ce1c3977b46e55ac99c6357d"
+  },
+  "end": {
+    "direct": {
+      "red": 0,
+      "blue": 921600
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 921600
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+  }
+}

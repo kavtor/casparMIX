@@ -1,0 +1,135 @@
+diff --git a/src/accelerator/ogl/image/image_kernel.cpp b/src/accelerator/ogl/image/image_kernel.cpp
+index ae36d37f6fafeacaa6c516a97b8736c868c8a0b3..0a7a96a5e0eed1cbcec1827b3d23de0644c963be 100644
+--- a/src/accelerator/ogl/image/image_kernel.cpp
++++ b/src/accelerator/ogl/image/image_kernel.cpp
+@@ -241,6 +241,9 @@ struct image_kernel::impl
+             shader_->set("sony_output_aspect",wipe.output_aspect>0?wipe.output_aspect:params.aspect_ratio);
+             shader_->set("sony_multi", wipe.multi);
+             shader_->set("sony_vertices",wipe.vertices);
++            shader_->set("dust_ratio",float(wipe.dust_ratio));
++            shader_->set("dust_size",float(wipe.dust_h_size),float(wipe.dust_v_size));
++            shader_->set("dust_flash",float(wipe.dust_flash));
+             shader_->set("sony_rounding",wipe.rounding/100.0);
+             shader_->set("sony_tile_size",wipe.tile_size/100.0);
+             shader_->set("sony_center", wipe.x, wipe.y);
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 9fc61d6eaa62045476b39f7c9c435930e9a7d1fa..38cbfc22e0b7c5e42b3b31a5c639d7a42ded461f 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -805,6 +805,26 @@ float sony_coverage(float distance, float softness)
+     return smoothstep(-width, width, distance);
+ }
+ 
++// Dust Mix is an explicit project transition, not a Sony 274 catalogue claim.
++uniform float dust_ratio,dust_flash;
++uniform vec2 dust_size;
++float dust_hash(vec2 cell,float phase) {
++    return fract(sin(dot(cell,vec2(127.1,311.7))+phase*74.7)*43758.5453);
++}
++float dust_coverage(vec2 p,float progress) {
++    vec2 physical=vec2(p.x*sony_output_aspect,p.y);
++    vec2 uv=physical/max(dust_size,vec2(.001));
++    vec2 cell=floor(uv),local=fract(uv)-vec2(.5);
++    // Progress-indexed flashing retraces deterministically and stops with T-bar.
++    float phase=floor(progress*dust_flash);
++    float start=dust_hash(cell,phase)*.8;
++    float radius=clamp((progress-start)/(1.0-start),0.0,1.0);
++    float diamond=abs(local.x)+abs(local.y);
++    float aa=max(fwidth(diamond),.001);
++    float coverage=smoothstep(diamond-aa,diamond+aa,radius);
++    return mix(progress,coverage,dust_ratio);
++}
++
+ float sony_matte(vec2 packed_uv)
+ {
+     bool outgoing = packed_uv.x >= 0.5;
+@@ -820,6 +840,12 @@ float sony_matte(vec2 packed_uv)
+     float t = clamp(sony_progress, 0.0, 1.0);
+     if (t <= 0.0) return sony_role != 0 ? 0.0 : outgoing ? 1.0 : 0.0;
+     if (t >= 1.0) return sony_role == 2 ? 0.0 : sony_role == 1 ? 1.0 : outgoing ? 0.0 : 1.0;
++    if(sony_code==274){
++        float coverage=dust_coverage(p,sony_reverse?1.0-t:t);
++        if(sony_reverse)coverage=1.0-coverage;
++        if(sony_role==2)return 0.0;
++        return outgoing?1.0-coverage:coverage;
++    }
+     float d = sony_distance(p, sony_reverse ? 1.0-t : t, sony_output_aspect*grid.y/grid.x);
+     if (sony_reverse) d = -d;
+     bool mosaic=(sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269);
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 503a21deb47d43c1715cd400032e4a9f82857c6f..1cf0537c34385c81dd797cc51be2a589e17118e9 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.18.2
++0.19.0
+diff --git a/src/core/frame/frame_transform.cpp b/src/core/frame/frame_transform.cpp
+index 23ab252aed177250b58699fe1271a8901d1ef6c1..3f7a11b6465c7f974eb0461f94017317f063e69d 100644
+--- a/src/core/frame/frame_transform.cpp
++++ b/src/core/frame/frame_transform.cpp
+@@ -134,7 +134,7 @@ bool operator==(const rectangle& lhs, const rectangle& rhs)
+ bool operator==(const sony_wipe& lhs, const sony_wipe& rhs)
+ {
+     return lhs.code == rhs.code && lhs.role == rhs.role && eq(lhs.progress, rhs.progress) && eq(lhs.soft, rhs.soft) &&
+-        eq(lhs.border, rhs.border) && eq(lhs.aspect, rhs.aspect) && eq(lhs.output_aspect,rhs.output_aspect) && lhs.multi == rhs.multi && lhs.vertices==rhs.vertices && lhs.tile_size==rhs.tile_size && eq(lhs.rounding,rhs.rounding) &&
++        eq(lhs.dust_ratio,rhs.dust_ratio) && eq(lhs.dust_h_size,rhs.dust_h_size) && eq(lhs.dust_v_size,rhs.dust_v_size) && eq(lhs.dust_flash,rhs.dust_flash) && eq(lhs.border, rhs.border) && eq(lhs.aspect, rhs.aspect) && eq(lhs.output_aspect,rhs.output_aspect) && lhs.multi == rhs.multi && lhs.vertices==rhs.vertices && lhs.tile_size==rhs.tile_size && eq(lhs.rounding,rhs.rounding) &&
+         eq(lhs.x, rhs.x) && eq(lhs.y, rhs.y) && lhs.reverse == rhs.reverse;
+ }
+ 
+diff --git a/src/core/frame/frame_transform.h b/src/core/frame/frame_transform.h
+index 9527f3afefe8d9556718bd8677b2fb63d2aed22a..6699fcbed510ed8ba37a24b966288543bca6c3d1 100644
+--- a/src/core/frame/frame_transform.h
++++ b/src/core/frame/frame_transform.h
+@@ -77,6 +77,7 @@ struct rectangle final
+ struct sony_wipe final
+ {
+     int code = 0;
++    double dust_ratio = .5, dust_h_size = .02, dust_v_size = .02, dust_flash = 0;
+     int role = 0; // 0 packed keys, 1 incoming key, 2 drawn colour border
+     double progress = 0.0;
+     double soft = 0.0;
+diff --git a/src/core/producer/wipe/sony_wipe_producer.cpp b/src/core/producer/wipe/sony_wipe_producer.cpp
+index a933bc25ba243a04c38e9b74512847be178c07d3..3ce393069fbd98d3da65986b933275104c272779 100644
+--- a/src/core/producer/wipe/sony_wipe_producer.cpp
++++ b/src/core/producer/wipe/sony_wipe_producer.cpp
+@@ -39,6 +39,10 @@ class sony_wipe_producer final : public frame_producer
+                 CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Missing native wipe value"));
+             const auto value = params[++i];
+             if (key == L"PROGRESS") { next.progress = number(value,0,1); manual = true; }
++            else if(key==L"DUST_RATIO") next.dust_ratio=number(value,0,1);
++            else if(key==L"H_SIZE") next.dust_h_size=number(value,.001,1);
++            else if(key==L"V_SIZE") next.dust_v_size=number(value,.001,1);
++            else if(key==L"FLASH_RATE") next.dust_flash=number(value,0,100);
+             else if (key == L"SOFT") next.soft = number(value,0,100);
+             else if (key == L"BORDER") next.border = number(value,0,100);
+             else if (key == L"ASPECT") next.aspect = number(value,0.01,1000);
+@@ -248,6 +252,8 @@ class sony_wipe_transition final : public frame_producer
+ spl::shared_ptr<frame_producer> create_sony_wipe_producer(
+     const frame_producer_dependencies& dependencies, const std::vector<std::wstring>& params)
+ {
++    if(!params.empty()&&boost::iequals(params[0],L"WIPE://DUSTMIX"))
++        return spl::make_shared<sony_wipe_producer>(dependencies,274,std::vector<std::wstring>(params.begin()+1,params.end()));
+     if (params.empty() || !boost::istarts_with(params[0], L"WIPE://SONY/")) return frame_producer::empty();
+     const auto text = params[0].substr(12);
+     size_t end = 0;
+@@ -266,16 +272,18 @@ spl::shared_ptr<frame_producer> create_sony_wipe_transition(
+     const frame_producer_dependencies& deps, const spl::shared_ptr<frame_producer>& destination,
+     const std::vector<std::wstring>& params)
+ {
+-    auto it = std::find_if(params.begin(),params.end(),[](const auto& p){return boost::iequals(p,L"WIPESONY");});
++    auto it = std::find_if(params.begin(),params.end(),[](const auto& p){return boost::iequals(p,L"WIPESONY")||boost::iequals(p,L"DUSTMIX");});
+     if (it == params.end()) return frame_producer::empty();
++    const bool dust=boost::iequals(*it,L"DUSTMIX");
+     auto options = std::vector<std::wstring>(it+1,params.end());
++    if(dust&&!options.empty())options.insert(options.begin()+1,{L"SONY",L"274"});
+     if (options.size()<3 || !boost::iequals(options[1],L"SONY"))
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Use WIPESONY FRAMES SONY CODE"));
+     size_t end = 0;
+     int duration = std::stoi(options[0],&end);
+     if(end != options[0].size() || duration < 1 || duration > 10000)
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid native wipe duration"));
+-    std::vector<std::wstring> mask_params{L"WIPE://SONY/"+options[2]};
++    std::vector<std::wstring> mask_params{dust?L"WIPE://DUSTMIX":L"WIPE://SONY/"+options[2]};
+     bool manual = false;
+     bool draw_border = true;
+     std::wstring colour = L"#ffffff";
