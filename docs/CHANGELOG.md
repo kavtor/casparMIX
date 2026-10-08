@@ -1,3 +1,17 @@
+# Changelog
+
+## 0.18.1 — CasparCG 2.5.1 stable
+
+* Center the visible bounds of enhanced Sony 26 (heart), 27 (star) and 49
+  (regular polygon) on POS, compensating asymmetric local geometry (issue #14).
+* Captured native frames verify centering within one pixel for default/displaced
+  origins and polygon counts 3, 4, 5, 6, 7, 8 and 64; rendered routes match exactly.
+* Record operator morphology approval of Standard Wipes 1–24 and other Enhanced
+  Wipes. Modifier approval is a separate step; corrected 26/27/49 await recheck.
+* Correct 150, 151, 604 and 606 to reveal incoming B as a center-opening fan
+  instead of the complement of a shrinking outgoing wedge (issue #15).
+* No added dependencies; published older patches remain unchanged.
+
 ## 0.18.0 — CasparCG 2.5.1 stable
 
 * Correct operator-reviewed Sony 1041–1044 to far-side hinged entry, and assign
@@ -5,8 +19,6 @@
 * Validate textured projection in NORM/REV, both endpoints and pixel-identical
   rendered program/multiview captures for all eight presets.
 * No added dependencies. Historical release patches remain unchanged.
-
-# Changelog
 
 ## 0.17.1 — CasparCG 2.5.1 stable
 
