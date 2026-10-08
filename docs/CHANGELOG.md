@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18.2 — CasparCG 2.5.1 stable
+
+* Correct Sony mosaic 269 origin from lower-right to upper-right (issue #17).
+* Native captures check early corner occupancy, traversal, REV, live tile size
+  and exact rendered program/multiview identity.
+* Record operator morphology approval of spiral mosaics 206–213.
+* 202/203 tile orientation remains under investigation; no speculative change.
+* No added dependencies.
+
 ## 0.18.1 — CasparCG 2.5.1 stable
 
 * Center the visible bounds of enhanced Sony 26 (heart), 27 (star) and 49

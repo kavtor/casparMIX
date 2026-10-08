@@ -1,0 +1,542 @@
+diff --git a/src/accelerator/ogl/image/image_kernel.cpp b/src/accelerator/ogl/image/image_kernel.cpp
+index 171259f4b91b09ff6effa67f8b6f520ef1f916e4..50a7bbb7da96221e3c1985386e2a74312cf73b90 100644
+--- a/src/accelerator/ogl/image/image_kernel.cpp
++++ b/src/accelerator/ogl/image/image_kernel.cpp
+@@ -222,6 +222,18 @@ struct image_kernel::impl
+         shader_->set("has_local_key", static_cast<bool>(params.local_key));
+         shader_->set("has_layer_key", static_cast<bool>(params.layer_key));
+         shader_->set("pixel_format", params.pix_desc.format);
++        const auto& wipe = transforms.image_transform.wipe;
++        shader_->set("sony_code", wipe.code);
++        if (wipe.code != 0) {
++            shader_->set("sony_role", wipe.role);
++            shader_->set("sony_progress", wipe.progress);
++            shader_->set("sony_soft", wipe.soft / 270.0);
++            shader_->set("sony_border", wipe.border / 540.0);
++            shader_->set("sony_aspect", wipe.aspect);
++            shader_->set("sony_multi", wipe.multi);
++            shader_->set("sony_center", wipe.x, wipe.y);
++            shader_->set("sony_reverse", wipe.reverse);
++        }
+         shader_->set("opacity", transforms.image_transform.is_key ? 1.0 : transforms.image_transform.opacity);
+ 
+         if (transforms.image_transform.chroma.enable) {
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 18fc6e83571eaf2642d14e39f6687628337e15eb..0a22b4d84337223ce1f2092502b040d20d13e5db 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -519,9 +519,73 @@ vec4 get_rgba_color()
+     return vec4(0.0, 0.0, 0.0, 0.0);
+ }
+ 
++// Both matte halves are evaluated from the same frame transform. The colour
++// border occupies the gap between the two softened boundaries.
++uniform int sony_code;
++uniform int sony_role;
++uniform float sony_progress;
++uniform float sony_soft;
++uniform float sony_border;
++uniform float sony_aspect;
++uniform int sony_multi;
++uniform vec2 sony_center;
++uniform bool sony_reverse;
++
++float sony_distance(vec2 p, float t)
++{
++    vec2 q = p - sony_center;
++    vec2 extent = max(sony_center, vec2(1.0) - sony_center);
++    float ar = max(sony_aspect, 0.01);
++    q.x /= ar;
++    extent.x /= ar;
++    if (sony_code == 1) return t - p.x;
++    if (sony_code == 3) return t - p.y;
++    if (sony_code == 5) return t - max(p.x, p.y);
++    if (sony_code == 6) return t - max(1.0-p.x, p.y);
++    if (sony_code == 9) return (2.0*t-p.x-p.y) / sqrt(2.0);
++    if (sony_code == 17) return t*extent.x - abs(q.x);
++    if (sony_code == 18) return t*extent.y - abs(q.y);
++    if (sony_code == 21) return t*max(extent.x, extent.y)-max(abs(q.x),abs(q.y));
++    if (sony_code == 23) return (t*(extent.x+extent.y)-abs(q.x)-abs(q.y))/sqrt(2.0);
++    return t*length(extent)-length(q); // Sony 24: circular/elliptical iris
++}
++
++float sony_coverage(float distance, float softness)
++{
++    return softness > 0.0 ? smoothstep(-softness, softness, distance) : step(0.0, distance);
++}
++
++float sony_matte(vec2 packed_uv)
++{
++    bool outgoing = packed_uv.x >= 0.5;
++    vec2 p = sony_role == 0 ? vec2(fract(packed_uv.x*2.0), packed_uv.y) : packed_uv;
++    vec2 grid = vec2(1.0);
++    if (sony_multi > 1) {
++        if (sony_code == 1 || sony_code == 17) grid.x = float(sony_multi);
++        else if (sony_code == 3 || sony_code == 18) grid.y = float(sony_multi);
++        else if (sony_multi == 2) grid.x = 2.0;
++        else grid = vec2(ceil(sqrt(float(sony_multi))));
++    }
++    p = fract(p*grid);
++    float t = clamp(sony_progress, 0.0, 1.0);
++    if (t <= 0.0) return sony_role != 0 ? 0.0 : outgoing ? 1.0 : 0.0;
++    if (t >= 1.0) return sony_role == 2 ? 0.0 : sony_role == 1 ? 1.0 : outgoing ? 0.0 : 1.0;
++    float d = sony_distance(p, sony_reverse ? 1.0-t : t);
++    if (sony_reverse) d = -d;
++    if (sony_role == 1) return sony_coverage(d, sony_soft);
++    float inner = sony_coverage(d-sony_border, sony_soft);
++    float outer = sony_coverage(d+sony_border, sony_soft);
++    if (sony_role == 2) return clamp(outer-inner, 0.0, 1.0);
++    return outgoing ? (inner >= 1.0 ? 0.0 : clamp((1.0-outer)/(1.0-inner),0.0,1.0)) : inner;
++}
++
+ void main()
+ {
+     vec4 color = get_rgba_color();
++    if (sony_code != 0) {
++        float coverage = sony_matte(TexCoord.st / TexCoord.q);
++        color = sony_role == 2 ? color * coverage : vec4(vec3(coverage), 1.0);
++    }
+     if (is_straight_alpha)
+         color.rgb *= color.a;
+     if (chroma)
+diff --git a/src/accelerator/ogl/util/transforms.cpp b/src/accelerator/ogl/util/transforms.cpp
+index 8ade89b4bb8b5079aaa317d313d2795166af3aae..ec9aac5cc0496268a8e84298604e7ed0f10545be 100644
+--- a/src/accelerator/ogl/util/transforms.cpp
++++ b/src/accelerator/ogl/util/transforms.cpp
+@@ -70,6 +70,7 @@ void apply_transform_colour_values(core::image_transform& self, const core::imag
+     self.is_mix |= other.is_mix;
+     self.blend_mode = std::max(self.blend_mode, other.blend_mode);
+     self.layer_depth += other.layer_depth;
++    if (other.wipe.code != 0) self.wipe = other.wipe;
+ }
+ 
+ bool is_default_perspective(const core::corners& perspective)
+diff --git a/src/core/CMakeLists.txt b/src/core/CMakeLists.txt
+index e69f4b6cc10532b15bace2ae68945d77246a6477..182b0484c84f99db5e9955b04e332c349c7f4405 100644
+--- a/src/core/CMakeLists.txt
++++ b/src/core/CMakeLists.txt
+@@ -23,6 +23,7 @@ set(SOURCES
+ 		producer/transition/transition_producer.cpp
+ 		producer/transition/sting_producer.cpp
+ 		producer/route/route_producer.cpp
++		producer/wipe/sony_wipe_producer.cpp
+ 
+ 		producer/cg_proxy.cpp
+ 		producer/frame_producer.cpp
+@@ -63,6 +64,7 @@ set(HEADERS
+ 		producer/transition/transition_producer.h
+ 		producer/transition/sting_producer.h
+ 		producer/route/route_producer.h
++		producer/wipe/sony_wipe_producer.h
+ 
+ 		producer/cg_proxy.h
+ 		producer/frame_producer.h
+diff --git a/src/core/frame/frame_transform.cpp b/src/core/frame/frame_transform.cpp
+index d6fb7bb289e43f3e1a03669fb1be041554a55794..c95a6d05738c49d16eeeb9e6e9ff4a9736031978 100644
+--- a/src/core/frame/frame_transform.cpp
++++ b/src/core/frame/frame_transform.cpp
+@@ -108,6 +108,7 @@ image_transform image_transform::tween(double                 time,
+     result.is_mix           = source.is_mix || dest.is_mix;
+     result.blend_mode       = std::max(source.blend_mode, dest.blend_mode);
+     result.layer_depth      = dest.layer_depth;
++    result.wipe             = dest.wipe;
+ 
+     do_tween_rectangle(source.crop, dest.crop, result.crop, time, duration, tween);
+     do_tween_corners(source.perspective, dest.perspective, result.perspective, time, duration, tween);
+@@ -128,9 +129,16 @@ bool operator==(const rectangle& lhs, const rectangle& rhs)
+     return boost::range::equal(lhs.ul, rhs.ul, eq) && boost::range::equal(lhs.lr, rhs.lr, eq);
+ }
+ 
++bool operator==(const sony_wipe& lhs, const sony_wipe& rhs)
++{
++    return lhs.code == rhs.code && lhs.role == rhs.role && eq(lhs.progress, rhs.progress) && eq(lhs.soft, rhs.soft) &&
++        eq(lhs.border, rhs.border) && eq(lhs.aspect, rhs.aspect) && lhs.multi == rhs.multi &&
++        eq(lhs.x, rhs.x) && eq(lhs.y, rhs.y) && lhs.reverse == rhs.reverse;
++}
++
+ bool operator==(const image_transform& lhs, const image_transform& rhs)
+ {
+-    return eq(lhs.opacity, rhs.opacity) && eq(lhs.contrast, rhs.contrast) && eq(lhs.brightness, rhs.brightness) &&
++    return lhs.wipe == rhs.wipe && eq(lhs.opacity, rhs.opacity) && eq(lhs.contrast, rhs.contrast) && eq(lhs.brightness, rhs.brightness) &&
+                eq(lhs.saturation, rhs.saturation) && boost::range::equal(lhs.anchor, rhs.anchor, eq) &&
+                boost::range::equal(lhs.fill_translation, rhs.fill_translation, eq) &&
+                boost::range::equal(lhs.fill_scale, rhs.fill_scale, eq) &&
+diff --git a/src/core/frame/frame_transform.h b/src/core/frame/frame_transform.h
+index 5768cdc3d761e2abb7e9a205260ea1058646f9fe..5a72ba3af37a5fee2b0506c62249babcdf0146ac 100644
+--- a/src/core/frame/frame_transform.h
++++ b/src/core/frame/frame_transform.h
+@@ -73,8 +73,26 @@ struct rectangle final
+     std::array<double, 2> lr = {1.0, 1.0};
+ };
+ 
++// Native packed wipe matte. Code zero leaves the original image path untouched.
++struct sony_wipe final
++{
++    int code = 0;
++    int role = 0; // 0 packed keys, 1 incoming key, 2 drawn colour border
++    double progress = 0.0;
++    double soft = 0.0;
++    double border = 0.0;
++    double aspect = 1.0;
++    int multi = 1;
++    double x = 0.5;
++    double y = 0.5;
++    bool reverse = false;
++};
++
++bool operator==(const sony_wipe& lhs, const sony_wipe& rhs);
++
+ struct image_transform final
+ {
++    sony_wipe wipe;
+     double opacity    = 1.0;
+     double contrast   = 1.0;
+     double brightness = 1.0;
+diff --git a/src/core/producer/frame_producer_registry.cpp b/src/core/producer/frame_producer_registry.cpp
+index 16f9a5e969900c95bb8c5c86f61d3e05f0bfad82..ec861028371e4754b906a6317d98f55ef4c5cf28 100644
+--- a/src/core/producer/frame_producer_registry.cpp
++++ b/src/core/producer/frame_producer_registry.cpp
+@@ -27,6 +27,7 @@
+ 
+ #include "color/color_producer.h"
+ #include "route/route_producer.h"
++#include "wipe/sony_wipe_producer.h"
+ #include "separated/separated_producer.h"
+ 
+ #include <boost/algorithm/string/predicate.hpp>
+@@ -144,6 +145,9 @@ spl::shared_ptr<core::frame_producer> do_create_producer(const frame_producer_de
+         return producer;
+     }
+ 
++    producer = create_sony_wipe_producer(dependencies, params);
++    if (producer != frame_producer::empty()) return producer;
++
+     producer = create_route_producer(dependencies, params);
+     if (producer != frame_producer::empty()) {
+         return producer;
+diff --git a/src/core/producer/wipe/sony_wipe_producer.cpp b/src/core/producer/wipe/sony_wipe_producer.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..64f7c28d0ad57de9cc8e7536c2f2eb02a3537bf3
+--- /dev/null
++++ b/src/core/producer/wipe/sony_wipe_producer.cpp
+@@ -0,0 +1,281 @@
++// Native GPU wipe matte producer for verified Sony panel pattern numbers.
++#include "sony_wipe_producer.h"
++#include <core/producer/color/color_producer.h>
++#include <core/frame/frame_transform.h>
++#include <common/future.h>
++#include <common/param.h>
++#include <boost/algorithm/string/predicate.hpp>
++#include <cmath>
++#include <mutex>
++#include <sstream>
++
++namespace caspar::core {
++namespace {
++class sony_wipe_producer final : public frame_producer
++{
++    draw_frame white_;
++    sony_wipe wipe_;
++    std::mutex mutex_;
++    int duration_ = 0;
++    int current_ = 0;
++
++    static double number(const std::wstring& value, double low, double high)
++    {
++        size_t end = 0;
++        const auto result = std::stod(value, &end);
++        if (end != value.size() || !std::isfinite(result) || result < low || result > high)
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid native wipe value"));
++        return result;
++    }
++
++    void update(const std::vector<std::wstring>& params)
++    {
++        auto next = wipe_;
++        auto duration = duration_;
++        bool manual = false;
++        for (size_t i=0; i<params.size(); ++i) {
++            auto key = boost::to_upper_copy(params[i]);
++            if (i+1 >= params.size())
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Missing native wipe value"));
++            const auto value = params[++i];
++            if (key == L"PROGRESS") { next.progress = number(value,0,1); manual = true; }
++            else if (key == L"SOFT") next.soft = number(value,0,100);
++            else if (key == L"BORDER") next.border = number(value,0,100);
++            else if (key == L"ASPECT") next.aspect = number(value,0.05,20);
++            else if (key == L"MULTI") {
++                auto count = number(value,1,16);
++                if (count != std::floor(count) || (count!=1 && count!=2 && count!=4 && count!=9 && count!=16))
++                    CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"MULTI must be 1, 2, 4, 9 or 16"));
++                next.multi = static_cast<int>(count);
++            } else if (key == L"X") next.x = number(value,0,1);
++            else if (key == L"Y") next.y = number(value,0,1);
++            else if (key == L"REVERSE") {
++                const auto flag = number(value,0,1);
++                if (flag != 0 && flag != 1)
++                    CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"REVERSE must be 0 or 1"));
++                next.reverse = flag == 1;
++            }
++            else if (key == L"DURATION") {
++                auto frames = number(value,1,10000);
++                if (frames != std::floor(frames))
++                    CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"DURATION must be an integer frame count"));
++                duration = static_cast<int>(frames);
++            } else CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unknown native wipe parameter: " + key));
++        }
++        wipe_ = next;
++        duration_ = manual ? 0 : duration;
++    }
++
++    draw_frame snapshot() const
++    {
++        auto result = draw_frame::push(white_);
++        result.transform().image_transform.wipe = wipe_;
++        return result;
++    }
++  public:
++    sony_wipe_producer(const frame_producer_dependencies& deps, int code, const std::vector<std::wstring>& params)
++        : white_(create_color_frame(this, deps.frame_factory, uint32_t(0xffffffff)))
++    {
++        wipe_.code = code;
++        update(params);
++    }
++    draw_frame receive_impl(video_field field, int) override
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        if (duration_ > 0 && field != video_field::b) {
++            wipe_.progress = duration_ == 1 ? 1.0 : std::min(1.0,double(current_)/double(duration_-1));
++            if (field != video_field::b && duration_ > 0 && current_ < duration_) ++current_;
++        }
++        return snapshot();
++    }
++    draw_frame first_frame(video_field) override
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        return snapshot();
++    }
++    draw_frame last_frame(video_field field) override { return first_frame(field); }
++    std::future<std::wstring> call(const std::vector<std::wstring>& params) override
++    {
++        std::vector<std::wstring> tokens;
++        for (const auto& part : params) {
++            std::wistringstream stream(part);
++            for (std::wstring token; stream >> token;) tokens.push_back(token);
++        }
++        std::lock_guard<std::mutex> lock(mutex_);
++        update(tokens);
++        return make_ready_future(std::wstring(L"OK"));
++    }
++    uint32_t nb_frames() const override { return duration_ > 0 ? duration_ : UINT32_MAX; }
++    bool is_ready() override { return true; }
++    std::wstring name() const override { return L"sony-wipe"; }
++    std::wstring print() const override { return L"sony-wipe"; }
++    monitor::state state() const override
++    {
++        // Producer calls run on the stage executor; the snapshot is immutable.
++        monitor::state result;
++        return result;
++    }
++};
++}
++
++namespace {
++draw_frame opaque_colour(const frame_producer_dependencies& deps, void* tag, const std::wstring& colour)
++{
++    uint32_t value;
++    if (!try_get_color(colour,value) || (value >> 24) != 0xff)
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"BORDERCOLOR requires an opaque colour"));
++    return create_color_frame(tag,deps.frame_factory,value);
++}
++
++class sony_wipe_transition final : public frame_producer
++{
++    spl::shared_ptr<frame_producer> destination_;
++    spl::shared_ptr<frame_producer> source_ = frame_producer::empty();
++    spl::shared_ptr<frame_producer> mask_;
++    draw_frame colour_;
++    spl::shared_ptr<frame_factory> frame_factory_;
++    int duration_;
++    int current_ = 0;
++    double progress_ = 0;
++    bool manual_;
++    bool draw_border_;
++    bool ready_ = false;
++
++  public:
++    sony_wipe_transition(const frame_producer_dependencies& deps,
++        const spl::shared_ptr<frame_producer>& destination,
++        const spl::shared_ptr<frame_producer>& mask, int duration, bool manual, bool draw_border, const std::wstring& colour)
++        : destination_(destination), mask_(mask), colour_(opaque_colour(deps,this,colour)),
++          frame_factory_(deps.frame_factory), duration_(duration), manual_(manual), draw_border_(draw_border) {}
++    void leading_producer(const spl::shared_ptr<frame_producer>& source) override { source_ = source; }
++    draw_frame first_frame(video_field field) override { return destination_->first_frame(field); }
++    bool is_ready() override { return destination_->is_ready(); }
++    spl::shared_ptr<frame_producer> following_producer() const override
++    {
++        return !manual_ && ready_ && current_ >= duration_ ? destination_ : frame_producer::empty();
++    }
++    draw_frame receive_impl(video_field field, int nb_samples) override
++    {
++        destination_->first_frame(field);
++        ready_ = destination_->is_ready();
++        if (!ready_) return source_->receive(field,nb_samples);
++        if (!manual_ && field != video_field::b) progress_ = duration_ == 1 ? 1 : std::min(1.0,double(current_)/double(duration_-1));
++        mask_->call({L"PROGRESS",std::to_wstring(progress_)}).get();
++        auto mask = mask_->receive(field,nb_samples);
++        auto incoming = destination_->receive(field,nb_samples);
++        if (!incoming) incoming = destination_->last_frame(field);
++        auto outgoing = source_->receive(field,nb_samples);
++        if (!outgoing) outgoing = source_->last_frame(field);
++        outgoing.transform().audio_transform.volume *= 1-progress_;
++        incoming.transform().audio_transform.volume *= progress_;
++        if (draw_border_) {
++            // Incoming video and the contour share the exact same frame-local
++            // distance field. No independently clocked overlay producer exists.
++            auto key = mask;
++            key.transform().image_transform.wipe.role = 1;
++            auto result = draw_frame::over(outgoing,draw_frame::mask(incoming,key));
++            if (mask.transform().image_transform.wipe.border > 0) {
++                auto border = draw_frame::push(colour_);
++                border.transform().image_transform.wipe = mask.transform().image_transform.wipe;
++                border.transform().image_transform.wipe.role = 2;
++                result = draw_frame::over(result,border);
++            }
++            if (!manual_ && field != video_field::b && current_ < duration_) ++current_;
++            return result;
++        }
++        auto key_in = draw_frame::push(mask);
++        auto key_out = draw_frame::push(mask);
++        for (auto* key : {&key_in,&key_out}) {
++            key->transform().image_transform.enable_geometry_modifiers = true;
++            key->transform().image_transform.fill_scale = {2.0,1.0};
++        }
++        key_out.transform().image_transform.fill_translation = {-1.0,0.0};
++        if (!manual_ && field != video_field::b && current_ < duration_) ++current_;
++        return draw_frame::over(colour_,draw_frame::over(draw_frame::mask(outgoing,key_out),draw_frame::mask(incoming,key_in)));
++    }
++    std::future<std::wstring> call(const std::vector<std::wstring>& params) override
++    {
++        std::vector<std::wstring> tokens;
++        for (const auto& part : params) {
++            std::wistringstream stream(part);
++            for(std::wstring token;stream>>token;) tokens.push_back(token);
++        }
++        // Validate every option before committing any picture/state change.
++        auto colour = colour_;
++        std::vector<std::wstring> matte_tokens;
++        for(size_t i=0;i<tokens.size();i+=2) {
++            if(i+1>=tokens.size())
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Missing native wipe value"));
++            if(boost::iequals(tokens[i],L"BORDERCOLOR")) {
++                uint32_t value;
++                if(!try_get_color(tokens[i+1],value) || (value>>24)!=0xff)
++                    CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"BORDERCOLOR requires an opaque colour"));
++                colour = create_color_frame(this,frame_factory_,value);
++            } else { matte_tokens.push_back(tokens[i]);matte_tokens.push_back(tokens[i+1]); }
++        }
++        mask_->call(matte_tokens).get();
++        colour_ = colour;
++        for (size_t i=0;i+1<tokens.size();i+=2)
++            if(boost::iequals(tokens[i],L"PROGRESS")) { progress_=std::stod(tokens[i+1]);manual_=true; }
++        return make_ready_future(std::wstring(L"OK"));
++    }
++    std::wstring name() const override { return L"transition"; }
++    std::wstring print() const override { return L"sony-wipe-transition"; }
++    monitor::state state() const override
++    {
++        monitor::state result;
++        result["transition/type"] = "sony-wipe";
++        result["transition/frame"] = {current_,duration_};
++        return result;
++    }
++};
++}
++
++spl::shared_ptr<frame_producer> create_sony_wipe_producer(
++    const frame_producer_dependencies& dependencies, const std::vector<std::wstring>& params)
++{
++    if (params.empty() || !boost::istarts_with(params[0], L"WIPE://SONY/")) return frame_producer::empty();
++    const auto text = params[0].substr(12);
++    size_t end = 0;
++    const auto code = std::stoi(text, &end);
++    if (end != text.size() || (code!=1 && code!=3 && code!=5 && code!=6 && code!=9 && code!=17 &&
++        code!=18 && code!=21 && code!=23 && code!=24))
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unsupported Sony wipe pattern"));
++    return spl::make_shared<sony_wipe_producer>(dependencies, code,
++        std::vector<std::wstring>(params.begin()+1,params.end()));
++}
++spl::shared_ptr<frame_producer> create_sony_wipe_transition(
++    const frame_producer_dependencies& deps, const spl::shared_ptr<frame_producer>& destination,
++    const std::vector<std::wstring>& params)
++{
++    auto it = std::find_if(params.begin(),params.end(),[](const auto& p){return boost::iequals(p,L"WIPESONY");});
++    if (it == params.end()) return frame_producer::empty();
++    auto options = std::vector<std::wstring>(it+1,params.end());
++    if (options.size()<3 || !boost::iequals(options[1],L"SONY"))
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Use WIPESONY FRAMES SONY CODE"));
++    size_t end = 0;
++    int duration = std::stoi(options[0],&end);
++    if(end != options[0].size() || duration < 1 || duration > 10000)
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid native wipe duration"));
++    std::vector<std::wstring> mask_params{L"WIPE://SONY/"+options[2]};
++    bool manual = false;
++    bool draw_border = true;
++    std::wstring colour = L"#ffffff";
++    for(size_t i=3;i<options.size();i+=2) {
++        if(i+1>=options.size()) CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Missing native wipe value"));
++        if(boost::iequals(options[i],L"MANUAL")) {
++            if(options[i+1]!=L"0" && options[i+1]!=L"1")
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"MANUAL must be 0 or 1"));
++            manual = options[i+1]==L"1";
++        } else if(boost::iequals(options[i],L"BORDERMODE")) {
++            if (!boost::iequals(options[i+1],L"DRAW") && !boost::iequals(options[i+1],L"GAP"))
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"BORDERMODE must be DRAW or GAP"));
++            draw_border = boost::iequals(options[i+1],L"DRAW");
++        } else if(boost::iequals(options[i],L"BORDERCOLOR")) colour=options[i+1];
++        else { mask_params.push_back(options[i]);mask_params.push_back(options[i+1]); }
++    }
++    auto mask = create_sony_wipe_producer(deps,mask_params);
++    return spl::make_shared<sony_wipe_transition>(deps,destination,mask,duration,manual,draw_border,colour);
++}
++
++}
+diff --git a/src/core/producer/wipe/sony_wipe_producer.h b/src/core/producer/wipe/sony_wipe_producer.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..1a6fd5aa51fb502ba5b4fa88c074626003d4737e
+--- /dev/null
++++ b/src/core/producer/wipe/sony_wipe_producer.h
+@@ -0,0 +1,9 @@
++#pragma once
++#include <core/producer/frame_producer.h>
++namespace caspar::core {
++spl::shared_ptr<frame_producer> create_sony_wipe_producer(
++    const frame_producer_dependencies& dependencies, const std::vector<std::wstring>& params);
++spl::shared_ptr<frame_producer> create_sony_wipe_transition(
++    const frame_producer_dependencies& dependencies, const spl::shared_ptr<frame_producer>& destination,
++    const std::vector<std::wstring>& params);
++}
+diff --git a/src/protocol/amcp/AMCPCommandsImpl.cpp b/src/protocol/amcp/AMCPCommandsImpl.cpp
+index 4908e5cf269cdc456e740ba4145c01ab4bd2de3a..cebdc0dd1b6dbb5642d71066c3dea3801fba1a9d 100644
+--- a/src/protocol/amcp/AMCPCommandsImpl.cpp
++++ b/src/protocol/amcp/AMCPCommandsImpl.cpp
+@@ -54,6 +54,7 @@
+ #include <core/producer/stage.h>
+ #include <core/producer/transition/sting_producer.h>
+ #include <core/producer/transition/transition_producer.h>
++#include <core/producer/wipe/sony_wipe_producer.h>
+ #include <core/video_format.h>
+ 
+ #include <protocol/osc/client.h>
+@@ -294,7 +295,10 @@ std::wstring loadbg_command(command_context& ctx)
+         transition_info                 transitionInfo;
+         sting_info                      stingInfo;
+ 
+-        if (try_match_sting(ctx.parameters, stingInfo)) {
++        transition_producer = create_sony_wipe_transition(get_producer_dependencies(channel, ctx), new_producer, ctx.parameters);
++        if (transition_producer != frame_producer::empty()) {
++            // Explicit native Sony wipe; legacy transition parsing is unchanged.
++        } else if (try_match_sting(ctx.parameters, stingInfo)) {
+             transition_producer =
+                 create_sting_producer(get_producer_dependencies(channel, ctx), new_producer, stingInfo);
+         } else {
