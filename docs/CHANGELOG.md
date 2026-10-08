@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.17.1 — CasparCG 2.5.1 stable
+
+* Correct Sony SPLIT 1011–1013: NORM brings incoming pieces in, REV takes outgoing pieces out. A/B endpoints remain unchanged. GitHub issue #2.
+* Native captures validate both directions, texture coordinates, rewind and exact program/multiview identity. Audio logic is unchanged; a separate CEF startup failure interrupted its additional validation.
+
 ## 0.17.0 — CasparCG 2.5.1 stable
 
 * Add Sony 1201 Frame In: incoming texture grows from centre over stationary outgoing video. Linear size is a project default; Sony multi-stage/key-transition preparation is not implied. Native catalogue: 72 implemented, 197 reserved.
@@ -125,7 +130,7 @@
 
 * Add opt-in `GRAPHICS` scenes: reusable cached FreeType text and rectangles,
   stereo-meter building blocks, grouped attack/release, local clock and heartbeat
-  watchdog conditions. No mixer, M/E or kavtor-specific layout is built into the producer.
+  watchdog conditions. No mixer, M/E or Strata-specific layout is built into the producer.
 * Bake static graphics in independent dirty regions only when visible content changes; level-only updates
   retain tiny cached GPU resources instead of uploading the whole overlay.
 * Add atomic bounded scene/value parsing and bounded text/animation caches.
