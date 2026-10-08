@@ -47,6 +47,10 @@ commit, requiring identical resulting Git trees. Native pixel/audio tests in
 `tools/` require a built engine and a usable GPU session; their recorded results
 are in `validation/`. CI patch checks do not replace those runtime tests.
 
+Published release patches are immutable historical source artifacts: old project names in their comments are retained to
+preserve their checksums and reproducibility. Current documentation and tools use
+kavtor.
+
 - [Commands](docs/COMMANDS.md), [changelog](docs/CHANGELOG.md)
 - [Timing](docs/TIMING.md), [capacity/performance](docs/PERFORMANCE.md)
 - [Dependencies](docs/DEPENDENCIES.md), [roadmap](docs/ROADMAP.md)

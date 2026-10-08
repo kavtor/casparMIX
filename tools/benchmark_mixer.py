@@ -25,7 +25,7 @@ def main():
     parser.add_argument('--sony', type=int, choices=(1201, 1355, 1356, 1357, 1358), default=1355, help='Native foreground DME to stress')
     parser.add_argument('--seconds', type=float, default=20)
     parser.add_argument('--clip', type=Path, required=True, help='1080p60 moving test clip, at least 6 seconds')
-    parser.add_argument('--ndi-probe', type=Path, help='Enable PGM and MV NDI consumers and receive them with strata-ndi-timing')
+    parser.add_argument('--ndi-probe', type=Path, help='Enable PGM and MV NDI consumers and receive them with kavtor-ndi-timing')
     args = parser.parse_args()
     if not math.isfinite(args.seconds) or args.seconds < 5:
         parser.error('--seconds must be finite and at least 5')
