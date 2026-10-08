@@ -1,0 +1,41 @@
+diff --git a/src/modules/html/html.cpp b/src/modules/html/html.cpp
+index bdf6080d..ee277cc5 100644
+--- a/src/modules/html/html.cpp
++++ b/src/modules/html/html.cpp
+@@ -38,11 +38,13 @@
+ #include <boost/range/algorithm/remove_if.hpp>
+ 
+ #include <memory>
++#include <cstdlib>
+ #include <utility>
+ 
+ #pragma warning(push)
+ #pragma warning(disable : 4458)
+ #include <include/cef_app.h>
++#include <include/base/cef_compiler_specific.h>
+ #include <include/cef_version.h>
+ #pragma warning(pop)
+ 
+@@ -219,6 +221,10 @@ class renderer_application
+     IMPLEMENT_REFCOUNTING(renderer_application);
+ };
+ 
++// CEF changes the stack canary in forked Linux subprocesses. Keep this
++// handoff out of protected pre-fork caller frames and never return a finished
++// child through the application entry stack. Parent protection is unchanged.
++NOINLINE NO_STACK_PROTECTOR
+ bool intercept_command_line(int argc, char** argv)
+ {
+ #ifdef _WIN32
+@@ -227,7 +233,10 @@ bool intercept_command_line(int argc, char** argv)
+     CefMainArgs main_args(argc, argv);
+ #endif
+ 
+-    return CefExecuteProcess(main_args, CefRefPtr<CefApp>(new renderer_application(false, false)), nullptr) >= 0;
++    const int exit_code = CefExecuteProcess(main_args, CefRefPtr<CefApp>(new renderer_application(false, false)), nullptr);
++    if (exit_code >= 0)
++        std::_Exit(exit_code);
++    return false;
+ }
+ 
+ void init(const core::module_dependencies& dependencies)
