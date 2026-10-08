@@ -1,0 +1,139 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.18.2)",
+  "268": {
+    "0.25": {
+      "direct": {
+        "blue_pixels": 184320,
+        "red_pixels": 737280
+      },
+      "rendered_multiview": {
+        "blue_pixels": 184320,
+        "red_pixels": 737280
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "a456e7135495615693cfe51b3a2db9c0a6dc6e3d35b5c9fc6fd16cbf25fbb537"
+    },
+    "0.5": {
+      "direct": {
+        "blue_pixels": 552960,
+        "red_pixels": 368640
+      },
+      "rendered_multiview": {
+        "blue_pixels": 552960,
+        "red_pixels": 368640
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "bab8674258f0fd9dce35b0cf07e0091122f02a2ec3c2104698ec4d7ff92b528e"
+    },
+    "0.75": {
+      "direct": {
+        "blue_pixels": 860544,
+        "red_pixels": 61056
+      },
+      "rendered_multiview": {
+        "blue_pixels": 860544,
+        "red_pixels": 61056
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "fb724c458aa43e3b278926b23ee171e8e68352556934f6d2e20e2f5000e13b69"
+    },
+    "reverse": {
+      "direct": {
+        "blue_pixels": 368640,
+        "red_pixels": 552960
+      },
+      "rendered_multiview": {
+        "blue_pixels": 368640,
+        "red_pixels": 552960
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "1311853389947481a5166ee66fec82dcebf4d86ca3cdd3e06f4444d78da52e50"
+    },
+    "size_live": {
+      "direct": {
+        "blue_pixels": 506880,
+        "red_pixels": 414720
+      },
+      "rendered_multiview": {
+        "blue_pixels": 506880,
+        "red_pixels": 414720
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "ea3ea24f263be953d1b868a2fe07aa7b0b6cf31b67c37969dd8d3c7723d2d922"
+    }
+  },
+  "269": {
+    "0.05": {
+      "direct": {
+        "blue_pixels": 40320,
+        "red_pixels": 881280
+      },
+      "rendered_multiview": {
+        "blue_pixels": 40320,
+        "red_pixels": 881280
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "77243393742195dbc77f16822ac59ec2e3bf777a65b4e45db5285bb014382024"
+    },
+    "0.25": {
+      "direct": {
+        "blue_pixels": 184320,
+        "red_pixels": 737280
+      },
+      "rendered_multiview": {
+        "blue_pixels": 184320,
+        "red_pixels": 737280
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "c1a63bcf6c0b2ba770ca877ded014a50d0ec7ce5c6269a2b755e222bd29acc2f"
+    },
+    "0.5": {
+      "direct": {
+        "blue_pixels": 552960,
+        "red_pixels": 368640
+      },
+      "rendered_multiview": {
+        "blue_pixels": 552960,
+        "red_pixels": 368640
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "ece7f882e7f0ecb09f542ea7f2f39d822c78ac32752b8fae1132c5c8345d6a3f"
+    },
+    "0.75": {
+      "direct": {
+        "blue_pixels": 860544,
+        "red_pixels": 61056
+      },
+      "rendered_multiview": {
+        "blue_pixels": 860544,
+        "red_pixels": 61056
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "82404f2c166e783d08e70c6e77767fd42fec4b9f0a9d503cbda94f7d8bee904d"
+    },
+    "reverse": {
+      "direct": {
+        "blue_pixels": 368640,
+        "red_pixels": 552960
+      },
+      "rendered_multiview": {
+        "blue_pixels": 368640,
+        "red_pixels": 552960
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "df61c2e314a92ff1b3fafda4c321bb5d7b80cfa986b60bdbebb79c24788c53c3"
+    },
+    "size_live": {
+      "direct": {
+        "blue_pixels": 506880,
+        "red_pixels": 414720
+      },
+      "rendered_multiview": {
+        "blue_pixels": 506880,
+        "red_pixels": 414720
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "90deaa3c1e643368927872a136eecd856cd59a65733b0bb1df9f47d5d42dd606"
+    }
+  }
+}

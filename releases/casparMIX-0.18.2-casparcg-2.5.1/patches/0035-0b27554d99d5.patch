@@ -1,0 +1,328 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 93dd66874dbbd1dda5777c2af93e312d972010f3..f3b95c3139e8ba01b35447928d9a8dfca9c59c3a 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -5,6 +5,7 @@ project("CasparCG Server")
+ set(CONFIG_VERSION_MAJOR 2)
+ set(CONFIG_VERSION_MINOR 5)
+ set(CONFIG_VERSION_BUG 1)
++set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/casparmix-version.txt")
+ file(STRINGS "${PROJECT_SOURCE_DIR}/casparmix-version.txt" CASPARMIX_VERSION LIMIT_COUNT 1)
+ set(CONFIG_VERSION_TAG "Stable (casparMIX ${CASPARMIX_VERSION})")
+ 
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 930e3000bdc9aaa03a5a26831c271dd32d494f61..a5510516948f37ef18bbb69d8edcb8a2c2e9ba7e 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.14.1
++0.15.0
+diff --git a/src/core/frame_sync_group.cpp b/src/core/frame_sync_group.cpp
+index 583a68b9ab0ca13bd6378c6f3ffd16f8808887f7..2564daaa96515aa505ab5b24dbcc74527464c6ff 100644
+--- a/src/core/frame_sync_group.cpp
++++ b/src/core/frame_sync_group.cpp
+@@ -97,13 +97,12 @@ void frame_sync_group::start()
+             // Derive deadlines from a rational rate, not rounded per-frame sleeps.
+             auto deadline = origin + std::chrono::duration_cast<clock::duration>(
+                 std::chrono::duration<double>(double(tick) * denominator_ / numerator_));
+-            // If rendering falls more than one frame behind, rebase the wall
+-            // clock instead of issuing an unbounded burst of catch-up frames.
+-            // Epochs remain sequential; overload lowers output rate.
++            // Preserve media time across ordinary driver/decoder stalls by allowing
++            // a bounded 200 ms recovery window. Rebasing after a single late
++            // frame accumulates slow playback even when average capacity is
++            // sufficient. Sustained overload still bounds the recovery backlog.
+             const auto now = clock::now();
+-            const auto period = std::chrono::duration_cast<clock::duration>(
+-                std::chrono::duration<double>(double(denominator_) / numerator_));
+-            if (now > deadline + period) {
++            if (now > deadline + std::chrono::milliseconds(200)) {
+                 origin += now - deadline;
+                 deadline = now;
+             }
+diff --git a/src/core/producer/stage.cpp b/src/core/producer/stage.cpp
+index 259f7037eba39f56fea1e5ee823bb96617f1aad4..9fa29f15e55f04a19e292f7dbadb2d1016c8b4d8 100644
+--- a/src/core/producer/stage.cpp
++++ b/src/core/producer/stage.cpp
+@@ -49,6 +49,7 @@ struct stage::impl : public std::enable_shared_from_this<impl>
+     spl::shared_ptr<diagnostics::graph> graph_;
+     monitor::state                      state_;
+     std::map<int, layer>                layers_;
++    std::atomic<bool>                   layers_empty_{true};
+     std::map<int, tweened_transform>    tweens_;
+     std::set<int>                       routeSources;
+ 
+@@ -105,6 +106,7 @@ struct stage::impl : public std::enable_shared_from_this<impl>
+         auto it = layers_.find(index);
+         if (it == std::end(layers_)) {
+             it = layers_.emplace(index, layer(video_format_desc())).first;
++            layers_empty_.store(false,std::memory_order_release);
+         }
+         return it->second;
+     }
+@@ -223,7 +225,7 @@ struct stage::impl : public std::enable_shared_from_this<impl>
+                 }
+                 state_ = std::move(state);
+             } catch (...) {
+-                layers_.clear();
++                layers_.clear();layers_empty_.store(true,std::memory_order_release);
+                 CASPAR_LOG_CURRENT_EXCEPTION();
+             }
+ 
+@@ -314,12 +316,12 @@ struct stage::impl : public std::enable_shared_from_this<impl>
+ 
+     std::future<void> clear(int index)
+     {
+-        return executor_.begin_invoke([=] { layers_.erase(index); });
++        return executor_.begin_invoke([=] { layers_.erase(index);layers_empty_.store(layers_.empty(),std::memory_order_release); });
+     }
+ 
+     std::future<void> clear()
+     {
+-        return executor_.begin_invoke([=] { layers_.clear(); });
++        return executor_.begin_invoke([=] { layers_.clear();layers_empty_.store(true,std::memory_order_release); });
+     }
+ 
+     std::future<void> swap_layers(const std::shared_ptr<stage>& other, bool swap_transforms)
+@@ -335,6 +337,7 @@ struct stage::impl : public std::enable_shared_from_this<impl>
+             auto other_layers = other_impl->layers_ | boost::adaptors::map_values;
+ 
+             std::swap(layers_, other_impl->layers_);
++            layers_empty_.store(layers_.empty(),std::memory_order_release);other_impl->layers_empty_.store(other_impl->layers_.empty(),std::memory_order_release);
+ 
+             if (swap_transforms)
+                 std::swap(tweens_, other_impl->tweens_);
+@@ -427,7 +430,7 @@ struct stage::impl : public std::enable_shared_from_this<impl>
+                 format_desc_ = format_desc;
+             }
+ 
+-            layers_.clear();
++            layers_.clear();layers_empty_.store(true,std::memory_order_release);
+         });
+     }
+ };
+@@ -455,6 +458,7 @@ std::future<void> stage::apply_transform(int
+ {
+     return impl_->apply_transform(index, transform, mix_duration, tween);
+ }
++bool stage::has_layers() const {return !impl_->layers_empty_.load(std::memory_order_acquire);}
+ std::future<void>            stage::clear_transforms(int index) { return impl_->clear_transforms(index); }
+ std::future<void>            stage::clear_transforms() { return impl_->clear_transforms(); }
+ std::future<frame_transform> stage::get_current_transform(int index) { return impl_->get_current_transform(index); }
+diff --git a/src/core/producer/stage.h b/src/core/producer/stage.h
+index c0a6fa8b33519bba5efd5ecf4970fbbfd376181b..6dbdb66420e0470e5ddb65e6ea5f941ddf07d6ac 100644
+--- a/src/core/producer/stage.h
++++ b/src/core/producer/stage.h
+@@ -125,6 +125,7 @@ class stage final : public stage_base
+                                                  const transform_func_t& transform,
+                                                  unsigned int            mix_duration,
+                                                  const tweener&          tween) override;
++    bool has_layers() const;
+     std::future<void>            clear_transforms(int index) override;
+     std::future<void>            clear_transforms() override;
+     std::future<frame_transform> get_current_transform(int index) override;
+diff --git a/src/core/video_channel.cpp b/src/core/video_channel.cpp
+index f1ac7aaa478a4094ea6120053931f9b8a39d2ecc..4a97a5be90fa95e35875bc383563185c3e55a0fd 100644
+--- a/src/core/video_channel.cpp
++++ b/src/core/video_channel.cpp
+@@ -145,9 +145,23 @@ struct video_channel::impl final
+         }
+     }
+ 
++    bool idle_=false;
+     void render_frame(uint64_t epoch)
+     {
+         try {
++            // Reserved synchronized channels with no layers/readers must not
++            // enqueue a stage task and mix silent audio fifty times per second.
++            // Loading runs on the stage executor and atomically wakes this path.
++            if(sync_group_&&!stage_->has_layers()&&output_.consumer_count()==0){
++                bool readers=false;{std::lock_guard<std::mutex> lock(routes_mutex_);for(const auto& r:routes_)if(!r.second.expired()){readers=true;break;}}
++                if(!readers){
++                    frame_counter_=epoch;monitor::state state;state["frame-sync/epoch"]=static_cast<int64_t>(epoch);state["frame-sync/idle"]=true;
++                    state["framerate"]={initial_format_.framerate.numerator(),initial_format_.framerate.denominator()};state["format"]=initial_format_.name;
++                    if(!idle_){mixer_.discard_pending_frames();mixer_.meter_audio({},initial_format_,initial_format_.audio_cadence.front());state["mixer"]=mixer_.state();state_=state;tick_(state);idle_=true;}else state_=state;
++                    return;
++                }
++            }
++            idle_=false;
+             graph_->set_text(print());
+ 
+             frame_counter_ = epoch;
+@@ -174,7 +188,8 @@ struct video_channel::impl final
+             // Produce
+             caspar::timer produce_timer;
+             auto          stage_frames = (*stage_)(frame_counter_, background_routes, routesCb);
+-            graph_->set_value("produce-time", produce_timer.elapsed() * format_desc.hz * 0.5);
++            const double produce_ms=produce_timer.elapsed()*1000;
++            graph_->set_value("produce-time", produce_ms/1000 * format_desc.hz * 0.5);
+ 
+             // This is a little race prone, but at worst a new consumer will start with a frame of black
+             bool has_consumers = output_.consumer_count() > 0;
+@@ -197,7 +212,8 @@ struct video_channel::impl final
+                 needs_render && stage_frames.format_desc.field_count == 2
+                     ? mixer_(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples, has_consumers, !sync_group_)
+                     : const_frame{};
+-            graph_->set_value("mix-time", mix_timer.elapsed() * format_desc.hz * 0.5);
++            const double mix_ms=mix_timer.elapsed()*1000;
++            graph_->set_value("mix-time", mix_ms/1000 * format_desc.hz * 0.5);
+ 
+             // Audio metering does not require a full-frame video render.
+             if (!needs_render) {
+@@ -225,11 +241,15 @@ struct video_channel::impl final
+                 (stage_frames.format_desc.field_count == 1 || (mixed_frame2 && mixed_frame2.size() > 0));
+             output_(cpu_ready ? mixed_frame : const_frame{},
+                     cpu_ready ? mixed_frame2 : const_frame{}, stage_frames.format_desc);
+-            graph_->set_value("consume-time", consume_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
++            const double consume_ms=consume_timer.elapsed()*1000;
++            graph_->set_value("consume-time", consume_ms/1000 * stage_frames.format_desc.hz * 0.5);
+ 
+             graph_->set_value("frame-time", frame_timer.elapsed() * stage_frames.format_desc.hz * 0.5);
+ 
+             monitor::state state = {};
++            state["performance/frame-ms"]=static_cast<float>(frame_timer.elapsed()*1000);
++            state["performance/produce-ms"]=static_cast<float>(produce_ms);state["performance/mix-ms"]=static_cast<float>(mix_ms);
++            state["performance/consume-ms"]=static_cast<float>(consume_ms);
+             if (sync_group_) state["frame-sync/epoch"] = static_cast<int64_t>(epoch);
+             state["stage"]       = stage_->state();
+             state["mixer"]       = mixer_.state();
+diff --git a/src/modules/image/producer/graphics_producer.cpp b/src/modules/image/producer/graphics_producer.cpp
+index e1bf30d8d34949915f084e6462aacd09cfc7fb7d..318ff281225809f48f44c74837c4cf759a718e22 100644
+--- a/src/modules/image/producer/graphics_producer.cpp
++++ b/src/modules/image/producer/graphics_producer.cpp
+@@ -50,7 +50,7 @@ class graphics_producer final : public core::frame_producer
+     std::map<std::string, double>     bar_levels_;
+     core::draw_frame                  latest_;
+     resource                          static_frame_;
+-    std::string                       static_key_;
++    std::string                       static_key_,definition_key_,baked_definition_key_;
+     int                               width_, height_;
+     resource                          bitmap(int width, int height, const std::vector<unsigned char>& pixels)
+     {
+@@ -91,6 +91,18 @@ class graphics_producer final : public core::frame_producer
+         cache_bytes_ += 4;
+         return r;
+     }
++    resource triangle(const std::string& c,int width,int height,bool left) {
++        width=std::clamp(width,1,128);height=std::clamp(height,1,128);
++        const auto key="triangle:"+c+":"+std::to_string(width)+":"+std::to_string(height)+":"+std::to_string(left);
++        auto found=cache_.find(key);if(found!=cache_.end())return found->second;
++        auto ink=color(c);std::vector<unsigned char> pixels(size_t(width)*height*4,0);
++        for(int y=0;y<height;++y)for(int x=0;x<width;++x){int covered=0;
++            for(int sy=0;sy<4;++sy)for(int sx=0;sx<4;++sx){double px=(x+(sx+.5)/4)/width,py=(y+(sy+.5)/4)/height;if(left)px=1-px;if(px<=1-std::abs(2*py-1))++covered;}
++            const unsigned alpha=unsigned(ink[3])*covered/16;const size_t offset=(size_t(y)*width+x)*4;
++            for(int i=0;i<3;++i)pixels[offset+i]=unsigned(ink[i])*alpha/255;pixels[offset+3]=alpha;
++        }
++        auto result=bitmap(width,height,pixels);cache_.emplace(key,result);cache_bytes_+=pixels.size();return result;
++    }
+     resource text(const std::string& value,
+                   int                size,
+                   int                maximum,
+@@ -321,8 +333,9 @@ class graphics_producer final : public core::frame_producer
+         for (auto& item : *nodes) {
+             auto& n    = item.second;
+             auto  kind = n.get<std::string>("type");
+-            if (kind != "rect" && kind != "text" && kind != "bar" && kind != "clock")
++            if (kind != "rect" && kind != "text" && kind != "bar" && kind != "clock" && kind != "triangle")
+                 throw std::invalid_argument("Unknown GRAPHICS node type");
++            if(kind=="triangle"&&n.get<std::string>("direction","right")!="left"&&n.get<std::string>("direction","right")!="right")throw std::invalid_argument("Invalid GRAPHICS triangle direction");
+             for (auto name : {"x", "y", "w", "h"}) {
+                 double v = n.get<double>(name, 0);
+                 if (!std::isfinite(v) || std::abs(v) > 16384)
+@@ -369,8 +382,11 @@ class graphics_producer final : public core::frame_producer
+             height = candidate.get<int>("height", deps_.format_desc.height);
+         if (width < 1 || height < 1 || width > 4096 || height > 2160)
+             throw std::invalid_argument("Invalid GRAPHICS viewport");
++        tree static_definition;for(const auto& item:candidate.get_child("nodes"))if(item.second.get<std::string>("type")!="bar")static_definition.push_back(item);
++        std::ostringstream definition;boost::property_tree::write_json(definition,static_definition,false);
++        const auto definition_key=std::to_string(width)+":"+std::to_string(height)+":"+definition.str();
+         std::lock_guard<std::mutex> guard(mutex_);
+-        scene_     = std::move(candidate);
++        scene_     = std::move(candidate);definition_key_=definition_key;
+         width_     = width;
+         height_    = height;
+         heartbeat_ = clock::now();
+@@ -399,45 +415,26 @@ class graphics_producer final : public core::frame_producer
+         const auto phase = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+         // Static text/shapes are baked only when their visible content changes.
+         // Meter levels use tiny shared textures, never a full-raster upload.
+-        tree              visible;
+-        auto              nodes = scene_.get_child_optional("nodes");
+-        std::vector<tree> bars;
+-        if (!nodes || nodes->empty()) {
+-            latest_ = core::draw_frame::empty();
+-            return latest_;
++        tree visible;auto nodes=scene_.get_child_optional("nodes");std::vector<const tree*> bars;
++        if(!nodes||nodes->empty()){latest_=core::draw_frame::empty();return latest_;}
++        std::string key=lost?"lost":"ready";
++        for(const auto& item:*nodes){const auto& n=item.second;const auto kind=n.get<std::string>("type");
++            if(kind=="clock")key+=":"+std::to_string(std::time(nullptr));
++            const int blink=n.get<int>("blink",0);if(kind!="bar"&&blink>0)key+=":"+std::to_string((phase/blink)%2);
++            if(kind=="bar"&&(!n.get<bool>("lostOnly",false)||lost)&&(!lost||!n.get<bool>("hideOnLost",false))&&!(blink>0&&(phase/blink)%2))bars.push_back(&n);
+         }
+-        for (auto& item : *nodes) {
+-            auto n = item.second;
+-            if (n.get<bool>("lostOnly", false) && !lost)
+-                continue;
+-            int blink = n.get<int>("blink", 0);
+-            if (blink > 0 && (phase / blink) % 2)
+-                continue;
+-            auto kind = n.get<std::string>("type");
+-            if (kind == "bar") {
+-                if (!lost || !n.get<bool>("hideOnLost", false))
+-                    bars.push_back(n);
+-                continue;
+-            }
+-            if (kind == "clock") {
+-                std::time_t t = std::time(nullptr);
+-                std::tm     local{};
++        if(definition_key_!=baked_definition_key_||key!=static_key_){
++            for(const auto& item:*nodes){auto n=item.second;const auto kind=n.get<std::string>("type");const int blink=n.get<int>("blink",0);
++                if(kind=="bar"||(n.get<bool>("lostOnly",false)&&!lost)||(blink>0&&(phase/blink)%2))continue;
++                if(kind=="clock"){std::time_t t=std::time(nullptr);std::tm local{};
+ #ifdef _WIN32
+-                localtime_s(&local, &t);
++                    localtime_s(&local,&t);
+ #else
+-                localtime_r(&t, &local);
++                    localtime_r(&t,&local);
+ #endif
+-                char buffer[16];
+-                std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &local);
+-                n.put("text", buffer);
+-                n.put("type", "text");
++                    char buffer[16];std::strftime(buffer,sizeof buffer,"%H:%M:%S",&local);n.put("text",buffer);n.put("type","text");}
++                visible.push_back({"",n});
+             }
+-            visible.push_back({"", n});
+-        }
+-        std::ostringstream signature;
+-        boost::property_tree::write_json(signature, visible, false);
+-        auto key = std::to_string(width_) + ":" + std::to_string(height_) + ":" + signature.str();
+-        if (key != static_key_) {
+             std::vector<unsigned char> pixels(size_t(width_) * height_ * 4, 0);
+             for (auto& item : visible) {
+                 auto& n = item.second;
+@@ -463,16 +460,18 @@ class graphics_producer final : public core::frame_producer
+                         composite(pixels, solid(background), x - pad, y - 3, r.width + pad * 2, r.height + 6);
+                     }
+                     composite(pixels, r, x, y, r.width, r.height);
+-                } else
+-                    composite(pixels, solid(c), x, y, w, h);
++                } else if(n.get<std::string>("type")=="triangle")
++                    composite(pixels,triangle(c,std::max(1,w),std::max(1,h),n.get<std::string>("direction","right")=="left"),x,y,w,h);
++                else composite(pixels, solid(c), x, y, w, h);
+             }
+             static_frame_ = bitmap(width_, height_, pixels);
+-            static_key_   = std::move(key);
++            static_key_   = std::move(key);baked_definition_key_=definition_key_;
+         }
+         std::vector<core::draw_frame> frames;
+         frames.push_back(static_frame_.frame);
+         std::map<std::string, double> animated;
+-        for (const auto& n : bars) {
++        for (const auto* node : bars) {
++            const auto& n=*node;
+             double  target = n.get<double>("value", 0);
+             auto    id     = n.get<std::string>("group", n.get<std::string>("id", ""));
+             double& level  = bar_levels_[id];

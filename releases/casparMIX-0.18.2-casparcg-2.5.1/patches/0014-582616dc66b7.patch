@@ -1,0 +1,156 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 0d91a54c7d439e84e3dd17d3594f1b2b6737f430..9e11b32fcaa96816319e5d0dcff9fb2873f04061 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.3.0
++0.3.1
+diff --git a/src/modules/ffmpeg/CMakeLists.txt b/src/modules/ffmpeg/CMakeLists.txt
+index 03450e916021064157f749d9dcce4068bc610fc4..5eb96fba4ce112956fa33c8b80b59c417c443a90 100644
+--- a/src/modules/ffmpeg/CMakeLists.txt
++++ b/src/modules/ffmpeg/CMakeLists.txt
+@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.16)
+ project (ffmpeg)
+ 
+ set(SOURCES
++	producer/color_bars_producer.cpp
++	producer/color_bars_producer.h
+ 	producer/av_producer.cpp
+ 	producer/av_producer.h
+ 	producer/av_input.cpp
+diff --git a/src/modules/ffmpeg/ffmpeg.cpp b/src/modules/ffmpeg/ffmpeg.cpp
+index 3229f987241a6ccc0176645c4f4d25d49ea68e8a..932c2cf5afb40f1ff96a45ce40c3ff2164bd3838 100644
+--- a/src/modules/ffmpeg/ffmpeg.cpp
++++ b/src/modules/ffmpeg/ffmpeg.cpp
+@@ -22,6 +22,7 @@
+ #include "StdAfx.h"
+ 
+ #include "ffmpeg.h"
++#include "producer/color_bars_producer.h"
+ 
+ #include "consumer/ffmpeg_consumer.h"
+ #include "producer/ffmpeg_producer.h"
+@@ -125,6 +126,7 @@ void init(const core::module_dependencies& dependencies)
+     dependencies.consumer_registry->register_consumer_factory(L"FFmpeg Consumer", create_consumer);
+     dependencies.consumer_registry->register_preconfigured_consumer_factory(L"ffmpeg", create_preconfigured_consumer);
+ 
++    dependencies.producer_registry->register_producer_factory(L"Color Bars Producer", create_color_bars_producer);
+     dependencies.producer_registry->register_producer_factory(L"FFmpeg Producer", create_producer);
+ }
+ 
+diff --git a/src/modules/ffmpeg/producer/color_bars_producer.cpp b/src/modules/ffmpeg/producer/color_bars_producer.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..80ffa020ed34f9d712cc11b05d734de257d55b19
+--- /dev/null
++++ b/src/modules/ffmpeg/producer/color_bars_producer.cpp
+@@ -0,0 +1,97 @@
++/*
++ * Copyright (c) 2026 casparMIX contributors.
++ * SPDX-License-Identifier: GPL-3.0-or-later
++ */
++#include "color_bars_producer.h"
++#include <common/except.h>
++#include <core/frame/frame.h>
++#include <core/frame/frame_factory.h>
++#include <core/frame/pixel_format.h>
++#include <boost/algorithm/string.hpp>
++#include <cstring>
++#include <map>
++extern "C" {
++#include <libavfilter/avfilter.h>
++#include <libavfilter/buffersink.h>
++#include <libavutil/frame.h>
++}
++
++namespace caspar::ffmpeg {
++namespace {
++void check(int result)
++{
++    if (result < 0)
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info("Cannot generate the requested color-bar pattern"));
++}
++class color_bars_producer final : public core::frame_producer
++{
++    core::draw_frame frame_;
++    std::wstring pattern_;
++public:
++    color_bars_producer(const core::frame_producer_dependencies& deps,
++                        const std::wstring& pattern, const std::string& filter)
++        : pattern_(pattern)
++    {
++        auto graph = std::unique_ptr<AVFilterGraph, void(*)(AVFilterGraph*)>(avfilter_graph_alloc(),
++            [](AVFilterGraph* p) { avfilter_graph_free(&p); });
++        auto video = std::unique_ptr<AVFrame, void(*)(AVFrame*)>(av_frame_alloc(),
++            [](AVFrame* p) { av_frame_free(&p); });
++        if (!graph || !video) throw std::bad_alloc();
++        // Generate exactly once. Planar 4:4:4 avoids chroma interpolation across
++        // bar boundaries. Keep legal-range samples and the source color matrix;
++        // the normal mixer performs the same conversion as any camera input.
++        // Legacy mixer paths infer BT.601 for small YUV rasters. Convert the
++        // RP 219 pattern explicitly when used at SD/thumbnail resolutions.
++        const bool rgb = pattern == L"SMPTEHD" && deps.format_desc.height <= 700;
++        const std::string tail = rgb
++            ? ",format=pix_fmts=yuv444p,scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=pix_fmts=bgra,buffersink"
++            : ",format=pix_fmts=yuv444p,buffersink";
++        const std::string spec = filter + "=size=" + std::to_string(deps.format_desc.width) + "x" +
++            std::to_string(deps.format_desc.height) + ":rate=1" + tail;
++        check(avfilter_graph_parse_ptr(graph.get(), spec.c_str(), nullptr, nullptr, nullptr));
++        check(avfilter_graph_config(graph.get(), nullptr));
++        AVFilterContext* sink = nullptr;
++        for (unsigned i = 0; i < graph->nb_filters; ++i)
++            if (std::strcmp(graph->filters[i]->filter->name, "buffersink") == 0) sink = graph->filters[i];
++        if (!sink) CASPAR_THROW_EXCEPTION(user_error() << msg_info("Color-bar filter has no output"));
++        check(av_buffersink_get_frame(sink, video.get()));
++        core::pixel_format_desc desc(rgb ? core::pixel_format::bgra : core::pixel_format::ycbcr,
++            pattern == L"SMPTEHD" ? core::color_space::bt709 : core::color_space::bt601);
++        const int planes = rgb ? 1 : 3;
++        const int stride = rgb ? 4 : 1;
++        for (int i = 0; i < planes; ++i)
++            desc.planes.emplace_back(video->width, video->height, stride);
++        auto image = deps.frame_factory->create_frame(this, desc);
++        for (int plane = 0; plane < planes; ++plane)
++            for (int y = 0; y < video->height; ++y)
++                std::memcpy(image.image_data(plane).begin() + y * video->width * stride,
++                            video->data[plane] + y * video->linesize[plane], video->width * stride);
++        frame_ = core::draw_frame(std::move(image));
++    }
++    core::draw_frame receive_impl(core::video_field, int) override { return frame_; }
++    bool is_ready() override { return true; }
++    std::wstring name() const override { return L"colorbars"; }
++    std::wstring print() const override { return L"colorbars[" + pattern_ + L"]"; }
++    core::monitor::state state() const override
++    {
++        core::monitor::state result;
++        result["colorbars/pattern"] = pattern_;
++        result["colorbars/static"] = true;
++        return result;
++    }
++};
++}
++spl::shared_ptr<core::frame_producer> create_color_bars_producer(
++    const core::frame_producer_dependencies& deps, const std::vector<std::wstring>& params)
++{
++    if (params.empty() || !boost::iequals(params[0], L"COLORBARS")) return core::frame_producer::empty();
++    const auto pattern = params.size() > 1 ? boost::to_upper_copy(params[1]) : std::wstring(L"EBU75");
++    const std::map<std::wstring, std::string> filters = {
++        {L"EBU75", "pal75bars"}, {L"EBU100", "pal100bars"},
++        {L"SMPTESD", "smptebars"}, {L"SMPTEHD", "smptehdbars"}};
++    auto it = filters.find(pattern);
++    if (it == filters.end())
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info("Unknown COLORBARS pattern: EBU75, EBU100, SMPTESD, SMPTEHD"));
++    return spl::make_shared<color_bars_producer>(deps, pattern, it->second);
++}
++}
+diff --git a/src/modules/ffmpeg/producer/color_bars_producer.h b/src/modules/ffmpeg/producer/color_bars_producer.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..60c69ebdfab74723b59d1cf23f5a5d9e8aff623c
+--- /dev/null
++++ b/src/modules/ffmpeg/producer/color_bars_producer.h
+@@ -0,0 +1,7 @@
++/* SPDX-License-Identifier: GPL-3.0-or-later */
++#pragma once
++#include <core/producer/frame_producer.h>
++namespace caspar::ffmpeg {
++spl::shared_ptr<core::frame_producer> create_color_bars_producer(
++    const core::frame_producer_dependencies&, const std::vector<std::wstring>&);
++}

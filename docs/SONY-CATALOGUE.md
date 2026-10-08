@@ -8,6 +8,15 @@
   in 0.18.1 and awaiting operator recheck.
 * Rotary 150, 151, 604 and 606: operator requested opening rather than closing
   the central wedge. Corrected in 0.18.1, awaiting operator recheck.
+* Mosaic 206–213: operator-approved morphology.
+* Mosaic 202/203: operator questions axis-aligned tiles and suspects rotated
+  tiles along the diagonal snake. Orientation remains unresolved; do not count
+  these presets as operator-validated. Sony numbering is a reference rather
+  than a strict clone requirement; an improved project interpretation may be
+  adopted after comparison. Current geometry is retained during operator review.
+* Mosaic 269: corrected to upper-right origin in 0.18.2, awaiting operator recheck.
+* Karaoke 220–223, mosaic paths 224–247 and random dust 270–274 remain pending
+  investigation and implementation.
 * This review covers morphology only, not modifier behavior or every time curve.
 
 For 26, the implicit heart's vertical extrema are -1 and 1.236659170 before

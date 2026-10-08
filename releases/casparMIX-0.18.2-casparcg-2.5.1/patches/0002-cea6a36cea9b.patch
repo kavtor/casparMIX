@@ -1,0 +1,62 @@
+diff --git a/src/core/mixer/mixer.cpp b/src/core/mixer/mixer.cpp
+index 59fe4c9b6cdab86a201832130a779db683be1a9e..1129124c5b1fa5fec152439d19433139ce2c85f8 100644
+--- a/src/core/mixer/mixer.cpp
++++ b/src/core/mixer/mixer.cpp
+@@ -103,6 +103,14 @@ struct mixer::impl
+         return frame;
+     }
+ 
++    void meter_audio(const std::vector<draw_frame>& frames, const video_format_desc& format_desc, int nb_samples)
++    {
++        for (const auto& frame : frames)
++            frame.accept(audio_mixer_);
++        audio_mixer_(format_desc, nb_samples);
++        state_["audio"] = audio_mixer_.state();
++    }
++
+     void set_master_volume(float volume) { audio_mixer_.set_master_volume(volume); }
+ 
+     float get_master_volume() { return audio_mixer_.get_master_volume(); }
+@@ -118,6 +126,11 @@ const_frame mixer::operator()(std::vector<draw_frame> frames, const video_format
+ {
+     return (*impl_)(std::move(frames), format_desc, nb_samples);
+ }
++void mixer::meter_audio(const std::vector<draw_frame>& frames, const video_format_desc& format_desc, int nb_samples)
++{
++    impl_->meter_audio(frames, format_desc, nb_samples);
++}
++
+ mutable_frame mixer::create_frame(const void* tag, const pixel_format_desc& desc)
+ {
+     return impl_->image_mixer_->create_frame(tag, desc);
+diff --git a/src/core/mixer/mixer.h b/src/core/mixer/mixer.h
+index 75e49ef45a97132bd5b51ce3905c060c17adcc84..a7bb01e283e9cabe3ed6f160a9c2538a671f93fb 100644
+--- a/src/core/mixer/mixer.h
++++ b/src/core/mixer/mixer.h
+@@ -45,6 +45,8 @@ class mixer final
+ 
+     const_frame operator()(std::vector<draw_frame> frames, const video_format_desc& format_desc, int nb_samples);
+ 
++    void meter_audio(const std::vector<draw_frame>& frames, const video_format_desc& format_desc, int nb_samples);
++
+     void  set_master_volume(float volume);
+     float get_master_volume();
+ 
+diff --git a/src/core/video_channel.cpp b/src/core/video_channel.cpp
+index 4643f749600e8ef635ad04b5d73d8c5776aafdfa..c95455056dbfd4291bf10061bc0bbffa8975b036 100644
+--- a/src/core/video_channel.cpp
++++ b/src/core/video_channel.cpp
+@@ -168,6 +168,13 @@ struct video_channel::impl final
+                             : const_frame{};
+                     graph_->set_value("mix-time", mix_timer.elapsed() * format_desc.hz * 0.5);
+ 
++                    // Audio metering does not require a full-frame video render.
++                    if (!has_consumers) {
++                        mixer_.meter_audio(stage_frames.frames, stage_frames.format_desc, stage_frames.nb_samples);
++                        if (stage_frames.format_desc.field_count == 2)
++                            mixer_.meter_audio(stage_frames.frames2, stage_frames.format_desc, stage_frames.nb_samples);
++                    }
++
+                     // Consume
+                     caspar::timer consume_timer;
+                     output_(mixed_frame, mixed_frame2, stage_frames.format_desc);

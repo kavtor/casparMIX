@@ -7,15 +7,15 @@ M/E scheduling, source assignments, panel behavior and UI belong there.
 
 ## Current release
 
-**CasparCG 2.5.1 + casparMIX 0.18.1**, pinned to upstream `v2.5.1-stable`.
+**CasparCG 2.5.1 + casparMIX 0.18.2**, pinned to upstream `v2.5.1-stable`.
 The combined distribution patch and ordered individual patches live in
-[releases/casparMIX-0.18.1-casparcg-2.5.1](releases/casparMIX-0.18.1-casparcg-2.5.1).
+[releases/casparMIX-0.18.2-casparcg-2.5.1](releases/casparMIX-0.18.2-casparcg-2.5.1).
 The patch is a distribution format; internal changes remain individually
 reviewable and can be proposed to upstream. No full engine fork is duplicated here.
 
 ```sh
 # In a clean CasparCG 2.5.1 stable source checkout:
-patch -p1 < /path/to/casparMIX-0.18.1-casparcg-2.5.1.patch
+patch -p1 < /path/to/casparMIX-0.18.2-casparcg-2.5.1.patch
 # Then configure/build/package CasparCG using your normal platform recipe.
 ```
 
@@ -38,11 +38,12 @@ limits are documented. SPLIT 1011–1013 use operator-confirmed NORM entry and R
 Edge-hinged 1041–1048 now distinguish far/near entry (issue #9).
 Enhanced irises 26, 27 and 49 center their visible bounds on the selected origin (issue #14).
 Edge fans 150, 151, 604 and 606 open incoming B from their center rays (issue #15).
+Mosaic cascade 269 begins at upper-right (issue #17).
 
 ## Development and validation
 
 ```sh
-python3 tools/verify_release.py --release releases/casparMIX-0.18.1-casparcg-2.5.1
+python3 tools/verify_release.py --release releases/casparMIX-0.18.2-casparcg-2.5.1
 ```
 
 This checks SHA-256 and applies combined/ordered forms to the exact upstream
