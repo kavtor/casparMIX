@@ -1,0 +1,19 @@
+{
+  "native_perspective": true,
+  "move_perspective": true,
+  "inside": [
+    255,
+    0,
+    0
+  ],
+  "excluded": [
+    0,
+    0,
+    0
+  ],
+  "lower": [
+    255,
+    0,
+    0
+  ]
+}

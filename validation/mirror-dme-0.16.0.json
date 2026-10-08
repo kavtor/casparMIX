@@ -1,0 +1,231 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.16.0)",
+  "1355": {
+    "poses": {
+      "0.25": {
+        "direct": {
+          "red": 0,
+          "blue": 26640
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 26640
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "3794d2097952158a2caaa7689a24f3dd566c473b3958ae3086bf6ffe768d1f10",
+        "max_channel_error": 0.7916666666666927
+      },
+      "0.5": {
+        "direct": {
+          "red": 0,
+          "blue": 106560
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 106560
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "8076f2a9ca4ea38dbc4b359c4ca894825b2581ffe1b90601af6fc966707d568c",
+        "max_channel_error": 0.8125000000000071
+      },
+      "0.75": {
+        "direct": {
+          "red": 0,
+          "blue": 79920
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 79920
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "8277dd5c95decc283d5ef000c2ed5a9a37f256e831c4b986d77fc43b490f6980",
+        "max_channel_error": 0.7916666666666679
+      },
+      "1": {
+        "direct": {
+          "red": 0,
+          "blue": 106560
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 106560
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "354feb4e4448f92cd3e48c95eadd09b68cde76bcfb73f96f6d314434adefaf09",
+        "max_channel_error": 0.65625
+      }
+    },
+    "reflected_uv_and_plain_destination": true
+  },
+  "1356": {
+    "poses": {
+      "0.25": {
+        "direct": {
+          "red": 0,
+          "blue": 26640
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 26640
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "533b08d10a008488641b8ea4d8e914dda1d596ae05882e4c817f80bf9a23500a",
+        "max_channel_error": 0.7916666666666927
+      },
+      "0.5": {
+        "direct": {
+          "red": 0,
+          "blue": 106560
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 106560
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "705188bda4888737b61e2aada6c22f4a220946a3df315ca875c77cf7359ad61a",
+        "max_channel_error": 0.8125000000000071
+      },
+      "0.75": {
+        "direct": {
+          "red": 0,
+          "blue": 159840
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 159840
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "0cca90a33997225aa2dcd5848176550dec7bf419778b7be7a87157d14260d6d0",
+        "max_channel_error": 0.7916666666666679
+      },
+      "1": {
+        "direct": {
+          "red": 0,
+          "blue": 106560
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 106560
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "354feb4e4448f92cd3e48c95eadd09b68cde76bcfb73f96f6d314434adefaf09",
+        "max_channel_error": 0.65625
+      }
+    },
+    "reflected_uv_and_plain_destination": true
+  },
+  "1357": {
+    "poses": {
+      "0.25": {
+        "direct": {
+          "red": 0,
+          "blue": 26640
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 26640
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "5208cd0f0bfa3dc4ddf04d571cbb2f6385075eaa6277dbf0512810f1d41fe934",
+        "max_channel_error": 0.7916666666666927
+      },
+      "0.5": {
+        "direct": {
+          "red": 0,
+          "blue": 106560
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 106560
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "ca21017fb0a4f940d1bf57038c285c6c58479ee657f07d29f86b831b75b35d75",
+        "max_channel_error": 0.8125000000000071
+      },
+      "0.75": {
+        "direct": {
+          "red": 0,
+          "blue": 159840
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 159840
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "637e89463439955aa7bfeecfe8872bab4aaf8853dda560348776d8f9e69a75cb",
+        "max_channel_error": 0.791666666666675
+      },
+      "1": {
+        "direct": {
+          "red": 0,
+          "blue": 106560
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 106560
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "354feb4e4448f92cd3e48c95eadd09b68cde76bcfb73f96f6d314434adefaf09",
+        "max_channel_error": 0.65625
+      }
+    },
+    "reflected_uv_and_plain_destination": true
+  },
+  "1358": {
+    "poses": {
+      "0.25": {
+        "direct": {
+          "red": 0,
+          "blue": 26640
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 26640
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "27a6f02a88a6dbaf4590a713c0e20d3a582054ae15070095d026e7b387196ddc",
+        "max_channel_error": 0.7916666666666927
+      },
+      "0.5": {
+        "direct": {
+          "red": 0,
+          "blue": 106560
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 106560
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "8c8791e31102a7d4bb2e31e83535497994ef749babc98dead3f3f961d2d2ffb7",
+        "max_channel_error": 0.8125000000000071
+      },
+      "0.75": {
+        "direct": {
+          "red": 0,
+          "blue": 79920
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 79920
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "21c10e7ea4fc7bfad917ec601dbe8d8f4e71201a37899994f97e8ea22a5bf553",
+        "max_channel_error": 0.791666666666675
+      },
+      "1": {
+        "direct": {
+          "red": 0,
+          "blue": 106560
+        },
+        "rendered_multiview": {
+          "red": 0,
+          "blue": 106560
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "354feb4e4448f92cd3e48c95eadd09b68cde76bcfb73f96f6d314434adefaf09",
+        "max_channel_error": 0.65625
+      }
+    },
+    "reflected_uv_and_plain_destination": true
+  }
+}

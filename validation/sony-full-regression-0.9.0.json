@@ -1,0 +1,129 @@
+{
+  "one-frame-and-route-cuts": {
+    "frames": 221,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "rendered-orientation": {
+    "frames": 130,
+    "different_frames": [],
+    "reference": "0cfa952bc0219c945e2d1937e3c4364a"
+  },
+  "rendered-nested-composition": {
+    "frames": 202,
+    "different_frames": [],
+    "reference": "0cfa952bc0219c945e2d1937e3c4364a"
+  },
+  "rendered-and-direct-cuts": {
+    "frames": 161,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-same-picture": {
+    "frames": 743,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-soft-border": {
+    "frames": 909,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-timed": {
+    "frames": 1027,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-fast-live-draw": {
+    "frames": 105,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "native-sony-fast-live-gap": {
+    "frames": 105,
+    "different_frames": [],
+    "reference": "d3037c4b525eba06ccc7ff05cae12f4f"
+  },
+  "iris-21-aspect-1": {
+    "frames": 39,
+    "different_frames": [],
+    "reference": "655280c0da505d8cc6c5346f252417e4",
+    "width": 256,
+    "height": 144,
+    "ratio": 1.7777777777777777,
+    "antialiased_pixels": 4
+  },
+  "iris-21-aspect-2": {
+    "frames": 40,
+    "different_frames": [],
+    "reference": "4837cbb17c05ffaa19f609a91449e5ea",
+    "width": 512,
+    "height": 144,
+    "ratio": 3.5555555555555554,
+    "antialiased_pixels": 4
+  },
+  "iris-23-aspect-1": {
+    "frames": 40,
+    "different_frames": [],
+    "reference": "c012422f6d64ca61ef981c6eee574f3e",
+    "width": 508,
+    "height": 286,
+    "ratio": 1.7762237762237763,
+    "antialiased_pixels": 1408
+  },
+  "iris-23-aspect-2": {
+    "frames": 40,
+    "different_frames": [],
+    "reference": "3ae1cdb828ea46d6850cda537b5f9503",
+    "width": 762,
+    "height": 214,
+    "ratio": 3.560747663551402,
+    "antialiased_pixels": 1728
+  },
+  "iris-24-aspect-1": {
+    "frames": 40,
+    "different_frames": [],
+    "reference": "3fb54b5472df7dc7f414c4948021dc75",
+    "width": 294,
+    "height": 294,
+    "ratio": 1.0,
+    "antialiased_pixels": 1076
+  },
+  "iris-24-aspect-2": {
+    "frames": 39,
+    "different_frames": [],
+    "reference": "e87b8cdd6b22e662d455481d23adc4fe",
+    "width": 384,
+    "height": 192,
+    "ratio": 2.0,
+    "antialiased_pixels": 1036
+  },
+  "rendered-audio": {
+    "windows": 22,
+    "rms": [
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06320135949176948,
+      0.06181471090877209,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06320135949176948,
+      0.06181471090877209,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06320135949176948,
+      0.06181471090877209,
+      0.06248620124325242,
+      0.06248620124325242,
+      0.06248620124325242
+    ],
+    "different_frames": []
+  }
+}

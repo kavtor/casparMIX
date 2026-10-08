@@ -1,0 +1,63 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.9.1)",
+  "CUBE": {
+    "direct": {
+      "blue_pixels": 284490
+    },
+    "rendered_multiview": {
+      "blue_pixels": 284490
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "45fb5065f9dac4efc72b995452051ea9c707ef13ad410ca714a7f4ddc019741d"
+  },
+  "ZOOM": {
+    "direct": {
+      "blue_pixels": 0
+    },
+    "rendered_multiview": {
+      "blue_pixels": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "818a61b91d791a7ca2cdaeb50b742943b1c697beb6f34eec957fc9c6f8a6c971"
+  },
+  "PUSH_LEFT": {
+    "direct": {
+      "blue_pixels": 322560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 322560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "b78a09ff2fc6c9fba3e583404ba791dcfba646fd190383362f697d63d928cfd2"
+  },
+  "SLIDE_RIGHT": {
+    "direct": {
+      "blue_pixels": 322560
+    },
+    "rendered_multiview": {
+      "blue_pixels": 322560
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "86cb12a86952e77f5142d6f1642952f6c14c64562d641165f1fa0403f7de311e"
+  },
+  "PAGE_CURL": {
+    "direct": {
+      "blue_pixels": 232427
+    },
+    "rendered_multiview": {
+      "blue_pixels": 232427
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0b89c158fc8850c512f9be914b245430b335095262aee3622c0e14599afbd267"
+  },
+  "PAGE_ROLL": {
+    "direct": {
+      "blue_pixels": 298080
+    },
+    "rendered_multiview": {
+      "blue_pixels": 298080
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "9d28fb24602c6d01e43c19aad72a33a6393eabcd8a21701c5c5a041b1fd4eed1"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "EBU75": {
+    "settled_frames": 29,
+    "mean_absolute_bgra_error": 0.0625,
+    "top_row_colors": 8,
+    "static": true,
+    "sha256": "3c02e8c887b8334a47e340b5fdb5496158077bcbd13f88ed1315453150830e9e"
+  },
+  "EBU100": {
+    "settled_frames": 30,
+    "mean_absolute_bgra_error": 0.03125,
+    "top_row_colors": 8,
+    "static": true,
+    "sha256": "fee60e30effc1c9f847a12dd8d3536be8c5a3f4ee282c8dc1799b602d88665cf"
+  },
+  "SMPTESD": {
+    "settled_frames": 30,
+    "mean_absolute_bgra_error": 0.04765625,
+    "top_row_colors": 7,
+    "static": true,
+    "sha256": "dbc24bb1ba3aa471b6de5e06db98a2d32c7a356e61e74d7998cf150571a27f6f"
+  },
+  "SMPTEHD": {
+    "settled_frames": 30,
+    "mean_absolute_bgra_error": 0.00107421875,
+    "top_row_colors": 8,
+    "static": true,
+    "sha256": "e287ccd2c918ba97f063c5083642969cab7f5b56751bcecfec3fdf95b65cdc3d"
+  },
+  "invalid_pattern_rejected": true
+}

@@ -1,0 +1,44 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.17.0)",
+  "target_fps": 120,
+  "measured_fps": 120.11971012234658,
+  "one_second_window_min_fps": 114.97242696609051,
+  "one_second_window_p05_fps": 118.94699079721855,
+  "duration_seconds": 29.811926755006425,
+  "sample_count": 150,
+  "media_seconds_per_wall_second": 1.0009975843528858,
+  "ndi_delivery": {
+    "10": {
+      "measured_fps": 120.01928593703072,
+      "min_one_second_fps": 116.729,
+      "video_timecode_gaps_after_startup": 8,
+      "sdk_video_dropped_after_startup": 0,
+      "sdk_audio_dropped_after_startup": 0,
+      "scope": "Local NDI receiver delivery; timecodes do not prove content lip-sync."
+    },
+    "11": {
+      "measured_fps": 120.00228648857887,
+      "min_one_second_fps": 115.994,
+      "video_timecode_gaps_after_startup": 7,
+      "sdk_video_dropped_after_startup": 0,
+      "sdk_audio_dropped_after_startup": 0,
+      "scope": "Local NDI receiver delivery; timecodes do not prove content lip-sync."
+    }
+  },
+  "configuration": {
+    "raster": "1920x1080",
+    "moving_inputs": 6,
+    "static_inputs": 2,
+    "me_pairs": 4,
+    "nested_wipe_and_dme": true,
+    "foreground_sony_dme": 1355,
+    "effect_progress": "native-every-frame",
+    "native_mv_tiles": 12,
+    "native_mv_labels": true,
+    "reserved_channels": 110,
+    "output_consumers": 2
+  },
+  "scope": "Defined 1080p workload on the development desktop; prior live renderer availability was not verified for this run. No arbitrary-hardware/encoder guarantee.",
+  "composition_clock_window_pass": false,
+  "cadence_pass": false
+}

@@ -1,0 +1,108 @@
+diff --git a/src/protocol/amcp/AMCPCommandQueue.cpp b/src/protocol/amcp/AMCPCommandQueue.cpp
+index b0b6bc50a02801c593c216a48dbab69b7a18ab7d..2108c7a7fe6079241490af18039af664ddca08a9 100644
+--- a/src/protocol/amcp/AMCPCommandQueue.cpp
++++ b/src/protocol/amcp/AMCPCommandQueue.cpp
+@@ -39,50 +39,66 @@ AMCPCommandQueue::AMCPCommandQueue(const std::wstring&
+ 
+ AMCPCommandQueue::~AMCPCommandQueue() {}
+ 
++namespace {
++bool command_error(const std::shared_ptr<AMCPCommand>& cmd, std::exception_ptr error, bool reply_without_req_id)
++{
++    std::wstring code;
++    try {
++        std::rethrow_exception(error);
++    } catch (file_not_found&) {
++        code = L"404";
++    } catch (expected_user_error&) {
++        code = L"403";
++    } catch (user_error&) {
++        code = L"403";
++    } catch (std::out_of_range&) {
++        code = L"402";
++    } catch (boost::bad_lexical_cast&) {
++        code = L"403";
++    } catch (std::invalid_argument&) {
++        code = L"403";
++    } catch (...) {
++        CASPAR_LOG_CURRENT_EXCEPTION();
++        code = L"501";
++    }
++    try {
++        cmd->SendReply(code + L" " + cmd->name() + L" FAILED\r\n", reply_without_req_id);
++    } catch (...) {
++        CASPAR_LOG_CURRENT_EXCEPTION();
++    }
++    return false;
++}
++} // namespace
+ std::future<bool> exec_cmd(std::shared_ptr<AMCPCommand>                         cmd,
+                            const spl::shared_ptr<std::vector<channel_context>>& channels,
+                            bool                                                 reply_without_req_id)
+ {
+     try {
+-        try {
+-            caspar::timer timer;
+-
+-            auto name = cmd->name();
+-            CASPAR_LOG(debug) << "Executing command: " << name;
+-
+-            auto res = cmd->Execute(channels).share();
+-            return std::async(std::launch::async, [cmd, res, reply_without_req_id, timer, name]() -> bool {
+-                cmd->SendReply(res.get(), reply_without_req_id);
+-
+-                CASPAR_LOG(debug) << "Executed command (" << timer.elapsed() << "s): " << name;
+-                return true;
+-            });
+-
+-        } catch (file_not_found&) {
+-            CASPAR_LOG(error) << " File not found.";
+-            cmd->SendReply(L"404 " + cmd->name() + L" FAILED\r\n", reply_without_req_id);
+-        } catch (expected_user_error&) {
+-            cmd->SendReply(L"403 " + cmd->name() + L" FAILED\r\n", reply_without_req_id);
+-        } catch (user_error&) {
+-            CASPAR_LOG(error) << " Check syntax.";
+-            cmd->SendReply(L"403 " + cmd->name() + L" FAILED\r\n", reply_without_req_id);
+-        } catch (std::out_of_range&) {
+-            CASPAR_LOG(error) << L"Missing parameter. Check syntax.";
+-            cmd->SendReply(L"402 " + cmd->name() + L" FAILED\r\n", reply_without_req_id);
+-        } catch (boost::bad_lexical_cast&) {
+-            CASPAR_LOG(error) << L"Invalid parameter. Check syntax.";
+-            cmd->SendReply(L"403 " + cmd->name() + L" FAILED\r\n", reply_without_req_id);
+-        } catch (...) {
+-            CASPAR_LOG_CURRENT_EXCEPTION();
+-            CASPAR_LOG(error) << "Failed to execute command: " << cmd->name();
+-            cmd->SendReply(L"501 " + cmd->name() + L" FAILED\r\n", reply_without_req_id);
+-        }
+-
++        caspar::timer timer;
++        auto          name = cmd->name();
++        CASPAR_LOG(debug) << "Executing command: " << name;
++        auto res = cmd->Execute(channels).share();
++        return std::async(std::launch::async, [cmd, res, reply_without_req_id, timer, name]() -> bool {
++            std::wstring reply;
++            // Producer failures normally arrive through the future, not while
++            // creating it. Always translate both paths into an AMCP response.
++            try {
++                reply = res.get();
++            } catch (...) {
++                return command_error(cmd, std::current_exception(), reply_without_req_id);
++            }
++            try {
++                cmd->SendReply(reply, reply_without_req_id);
++            } catch (...) {
++                CASPAR_LOG_CURRENT_EXCEPTION();
++                return false;
++            }
++            CASPAR_LOG(debug) << "Executed command (" << timer.elapsed() << "s): " << name;
++            return true;
++        });
+     } catch (...) {
+-        CASPAR_LOG_CURRENT_EXCEPTION();
++        return make_ready_future(command_error(cmd, std::current_exception(), reply_without_req_id));
+     }
+-
+-    return make_ready_future(false);
+ }
+ 
+ void AMCPCommandQueue::AddCommand(std::shared_ptr<AMCPGroupCommand> pCurrentCommand)

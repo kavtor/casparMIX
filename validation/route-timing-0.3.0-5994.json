@@ -1,0 +1,32 @@
+{
+  "simultaneous": {
+    "samples": 225,
+    "direct_minus_rendered_frames": {
+      "0": 225
+    },
+    "median_delay_frames": 0,
+    "frame_locked": true
+  },
+  "cuts": {
+    "samples": 411,
+    "step_histogram": {
+      "1": 410
+    },
+    "discontinuities": [],
+    "continuous": true
+  },
+  "mixes": {
+    "samples": 255,
+    "step_histogram": {
+      "1": 254
+    },
+    "continuous": true
+  },
+  "safety": {
+    "cycle_rejected": true,
+    "buffer_rejected": true,
+    "frame_rate_change_rejected": true,
+    "local_layer_buffer_preserved": true,
+    "server_responsive": true
+  }
+}

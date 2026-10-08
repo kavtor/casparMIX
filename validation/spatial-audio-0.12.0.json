@@ -1,0 +1,39 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.11.0)",
+  "1045-0.25": {
+    "b_over_a_amplitude": 0.33333660725263814,
+    "expected": 0.3333333333333333
+  },
+  "1045-0.5": {
+    "b_over_a_amplitude": 0.9999969168142437,
+    "expected": 1.0
+  },
+  "1045-0.75": {
+    "b_over_a_amplitude": 3.0000149239405687,
+    "expected": 3.0
+  },
+  "1101-0.25": {
+    "b_over_a_amplitude": 0.33333660725263814,
+    "expected": 0.3333333333333333
+  },
+  "1101-0.5": {
+    "b_over_a_amplitude": 0.9999969173292462,
+    "expected": 1.0
+  },
+  "1101-0.75": {
+    "b_over_a_amplitude": 3.0000149239405687,
+    "expected": 3.0
+  },
+  "1103-0.25": {
+    "b_over_a_amplitude": 0.333336609402757,
+    "expected": 0.3333333333333333
+  },
+  "1103-0.5": {
+    "b_over_a_amplitude": 0.9999969107947848,
+    "expected": 1.0
+  },
+  "1103-0.75": {
+    "b_over_a_amplitude": 3.0000149160159353,
+    "expected": 3.0
+  }
+}

@@ -1,0 +1,1979 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.14.0)",
+  "1051-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "61f9397b454a512832eb526ef21bf15c3087361d671265ab6d536a813e22266e",
+    "texture_check_count": 35,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.15,
+          0.95
+        ],
+        "pixel": [
+          10,
+          671
+        ],
+        "sample": [
+          39,
+          243,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.25,
+          0.85
+        ],
+        "pixel": [
+          6,
+          635
+        ],
+        "sample": [
+          64,
+          218,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          91,
+          428
+        ],
+        "sample": [
+          243,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          108,
+          435
+        ],
+        "sample": [
+          243,
+          243,
+          128
+        ]
+      }
+    ]
+  },
+  "1051-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "3a5ae780759b04ea0eae627a2ac8e04f1aaa595a7ee6e612a9c76fb43d1ee2ba",
+    "texture_check_count": 82,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.85
+        ],
+        "pixel": [
+          13,
+          626
+        ],
+        "sample": [
+          13,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.95
+        ],
+        "pixel": [
+          34,
+          676
+        ],
+        "sample": [
+          13,
+          242,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          811,
+          296
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          832,
+          346
+        ],
+        "sample": [
+          242,
+          243,
+          128
+        ]
+      }
+    ]
+  },
+  "1052-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "060ad7debe48d5aa1fb23c1e1a86d5abfa423249d9c99088289fd8139c2782c7",
+    "texture_check_count": 10,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.35
+        ],
+        "pixel": [
+          64,
+          9
+        ],
+        "sample": [
+          13,
+          89,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.44999999999999996
+        ],
+        "pixel": [
+          81,
+          16
+        ],
+        "sample": [
+          13,
+          116,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.15,
+          0.85
+        ],
+        "pixel": [
+          160,
+          14
+        ],
+        "sample": [
+          38,
+          218,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.15,
+          0.95
+        ],
+        "pixel": [
+          176,
+          21
+        ],
+        "sample": [
+          38,
+          243,
+          128
+        ]
+      }
+    ]
+  },
+  "1052-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "c54579d1b9ef80393c6e2b3bcd8a8851e6ddda1c5d57b997b2db167c72f1e52c",
+    "texture_check_count": 63,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          55,
+          7
+        ],
+        "sample": [
+          13,
+          13,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          75,
+          56
+        ],
+        "sample": [
+          13,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          1017,
+          75
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          1038,
+          125
+        ],
+        "sample": [
+          242,
+          243,
+          128
+        ]
+      }
+    ]
+  },
+  "1053-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "c4f089824716a83f869936f5938d246c5eb5fc51576e635c0b5821b944f53681",
+    "texture_check_count": 35,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          1171,
+          284
+        ],
+        "sample": [
+          12,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          1188,
+          291
+        ],
+        "sample": [
+          12,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.75,
+          0.15
+        ],
+        "pixel": [
+          1273,
+          84
+        ],
+        "sample": [
+          191,
+          37,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.85,
+          0.05
+        ],
+        "pixel": [
+          1269,
+          48
+        ],
+        "sample": [
+          216,
+          12,
+          128
+        ]
+      }
+    ]
+  },
+  "1053-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "38e4f57c868fa9158fa1704eb5fd9bdae114ae4ea3e6a5d6ae61be60c87a15cd",
+    "texture_check_count": 82,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          447,
+          373
+        ],
+        "sample": [
+          13,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          468,
+          423
+        ],
+        "sample": [
+          13,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.05
+        ],
+        "pixel": [
+          1245,
+          43
+        ],
+        "sample": [
+          242,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.15
+        ],
+        "pixel": [
+          1266,
+          93
+        ],
+        "sample": [
+          242,
+          38,
+          128
+        ]
+      }
+    ]
+  },
+  "1054-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "c6abbd3f07f99075f7d93d1575e2b1c627f222296f6852c47de664e4789a00e9",
+    "texture_check_count": 10,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.85,
+          0.05
+        ],
+        "pixel": [
+          1103,
+          698
+        ],
+        "sample": [
+          217,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.85,
+          0.15
+        ],
+        "pixel": [
+          1119,
+          705
+        ],
+        "sample": [
+          217,
+          37,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.5499999999999999
+        ],
+        "pixel": [
+          1198,
+          703
+        ],
+        "sample": [
+          242,
+          139,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.65
+        ],
+        "pixel": [
+          1215,
+          710
+        ],
+        "sample": [
+          242,
+          166,
+          128
+        ]
+      }
+    ]
+  },
+  "1054-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "1363e7663bde28c829e6f3468fb25a06dc288be5b35d3b900387f53049d80184",
+    "texture_check_count": 63,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          241,
+          594
+        ],
+        "sample": [
+          13,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          262,
+          644
+        ],
+        "sample": [
+          13,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          1204,
+          663
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          1224,
+          712
+        ],
+        "sample": [
+          242,
+          242,
+          128
+        ]
+      }
+    ]
+  },
+  "1055-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "245f56c553e05155682b643ad953157c617c61a0120c68ab7a4d302fac1a2547",
+    "texture_check_count": 10,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          164,
+          668
+        ],
+        "sample": [
+          12,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          147,
+          675
+        ],
+        "sample": [
+          12,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.15,
+          0.15
+        ],
+        "pixel": [
+          160,
+          705
+        ],
+        "sample": [
+          38,
+          37,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.15,
+          0.25
+        ],
+        "pixel": [
+          143,
+          712
+        ],
+        "sample": [
+          38,
+          63,
+          128
+        ]
+      }
+    ]
+  },
+  "1055-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "6aec2dca30fb77b199e868b908f7d328d9f5ac4aa34dbdae87b9e8cc8a7dbf47",
+    "texture_check_count": 63,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          240,
+          264
+        ],
+        "sample": [
+          13,
+          13,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          220,
+          314
+        ],
+        "sample": [
+          13,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.15
+        ],
+        "pixel": [
+          1017,
+          644
+        ],
+        "sample": [
+          242,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.25
+        ],
+        "pixel": [
+          997,
+          694
+        ],
+        "sample": [
+          242,
+          63,
+          128
+        ]
+      }
+    ]
+  },
+  "1056-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "b41b4475d48e17f4b6e22b507e3b7824901cf244d2bc90e009530e2190022e94",
+    "texture_check_count": 35,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.15,
+          0.05
+        ],
+        "pixel": [
+          10,
+          48
+        ],
+        "sample": [
+          39,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.25,
+          0.05
+        ],
+        "pixel": [
+          22,
+          77
+        ],
+        "sample": [
+          64,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.5499999999999999
+        ],
+        "pixel": [
+          25,
+          318
+        ],
+        "sample": [
+          242,
+          139,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.65
+        ],
+        "pixel": [
+          8,
+          325
+        ],
+        "sample": [
+          242,
+          165,
+          128
+        ]
+      }
+    ]
+  },
+  "1056-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "4feaf513c6296cf9eb81993b44b2786a6e925b4edfb64b459a60cb7d1fdb85ff",
+    "texture_check_count": 82,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          34,
+          43
+        ],
+        "sample": [
+          13,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          13,
+          93
+        ],
+        "sample": [
+          13,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.5499999999999999
+        ],
+        "pixel": [
+          728,
+          623
+        ],
+        "sample": [
+          242,
+          140,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.65
+        ],
+        "pixel": [
+          708,
+          672
+        ],
+        "sample": [
+          242,
+          165,
+          128
+        ]
+      }
+    ]
+  },
+  "1057-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "c986e00b9de9b8e59fc973cbc2a38380a2a428c071e9ac14c297938de82bcb7d",
+    "texture_check_count": 10,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.85,
+          0.75
+        ],
+        "pixel": [
+          1136,
+          7
+        ],
+        "sample": [
+          217,
+          192,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.85,
+          0.85
+        ],
+        "pixel": [
+          1119,
+          14
+        ],
+        "sample": [
+          217,
+          218,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          1132,
+          44
+        ],
+        "sample": [
+          243,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          1115,
+          51
+        ],
+        "sample": [
+          243,
+          243,
+          128
+        ]
+      }
+    ]
+  },
+  "1057-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "5f9a21b5910bf80b9d04cb0417d4871715106ddf8c6a537e4ac09512d77b3d01",
+    "texture_check_count": 63,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.75
+        ],
+        "pixel": [
+          282,
+          25
+        ],
+        "sample": [
+          13,
+          192,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.85
+        ],
+        "pixel": [
+          262,
+          75
+        ],
+        "sample": [
+          13,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          1059,
+          405
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          1039,
+          455
+        ],
+        "sample": [
+          242,
+          242,
+          128
+        ]
+      }
+    ]
+  },
+  "1058-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "8b87f11a3dcd14be66dda6c75e6798305bff9b09514167032997dacc8febbcb7",
+    "texture_check_count": 35,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.35
+        ],
+        "pixel": [
+          1271,
+          394
+        ],
+        "sample": [
+          13,
+          90,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.44999999999999996
+        ],
+        "pixel": [
+          1254,
+          401
+        ],
+        "sample": [
+          13,
+          116,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.75,
+          0.95
+        ],
+        "pixel": [
+          1257,
+          642
+        ],
+        "sample": [
+          191,
+          243,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.85,
+          0.95
+        ],
+        "pixel": [
+          1269,
+          671
+        ],
+        "sample": [
+          216,
+          243,
+          128
+        ]
+      }
+    ]
+  },
+  "1058-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "047a8a3c40fa1fd122cf53419ad2f9d6f421e6efa4c6cb7012c68f2bd8a84d06",
+    "texture_check_count": 82,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.35
+        ],
+        "pixel": [
+          571,
+          47
+        ],
+        "sample": [
+          13,
+          90,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.44999999999999996
+        ],
+        "pixel": [
+          551,
+          96
+        ],
+        "sample": [
+          13,
+          115,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          1266,
+          626
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          1245,
+          676
+        ],
+        "sample": [
+          242,
+          242,
+          128
+        ]
+      }
+    ]
+  },
+  "1061-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0a546f230a7e0b450e764015c36ee97a6c376a272c685d4eb64388cf7850bbbf",
+    "texture_check_count": 82,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          81,
+          74
+        ],
+        "sample": [
+          13,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          64,
+          81
+        ],
+        "sample": [
+          13,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          58,
+          394
+        ],
+        "sample": [
+          242,
+          216,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          41,
+          401
+        ],
+        "sample": [
+          242,
+          242,
+          128
+        ]
+      }
+    ]
+  },
+  "1061-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "e372af40e67ea26ccd0c293aa991b071355f53ca6430aeef4fb0e394469a3226",
+    "texture_check_count": 89,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          137,
+          64
+        ],
+        "sample": [
+          13,
+          13,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          117,
+          114
+        ],
+        "sample": [
+          13,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.5499999999999999
+        ],
+        "pixel": [
+          832,
+          643
+        ],
+        "sample": [
+          242,
+          140,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.65
+        ],
+        "pixel": [
+          811,
+          693
+        ],
+        "sample": [
+          242,
+          166,
+          128
+        ]
+      }
+    ]
+  },
+  "1062-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "c60ae98b14f9f424b28d2e74b4fe315e25030593a521d00c8e71941cb021fc30",
+    "texture_check_count": 82,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          1088,
+          339
+        ],
+        "sample": [
+          13,
+          12,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          1105,
+          346
+        ],
+        "sample": [
+          13,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.35
+        ],
+        "pixel": [
+          1248,
+          94
+        ],
+        "sample": [
+          242,
+          89,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.44999999999999996
+        ],
+        "pixel": [
+          1265,
+          101
+        ],
+        "sample": [
+          242,
+          115,
+          128
+        ]
+      }
+    ]
+  },
+  "1062-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "56e8840ff1a2deedf41a60c7c105e07c43f47e8c27238356ddf1dfb7d95a5a1b",
+    "texture_check_count": 89,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          344,
+          394
+        ],
+        "sample": [
+          13,
+          13,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          365,
+          444
+        ],
+        "sample": [
+          13,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.5499999999999999
+        ],
+        "pixel": [
+          1245,
+          313
+        ],
+        "sample": [
+          242,
+          140,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.65
+        ],
+        "pixel": [
+          1266,
+          363
+        ],
+        "sample": [
+          242,
+          166,
+          128
+        ]
+      }
+    ]
+  },
+  "1063-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "a0faff6faba97db7bd88b5c171c7b67a6447425eb2227e89c543906aaed369c4",
+    "texture_check_count": 82,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          1238,
+          318
+        ],
+        "sample": [
+          13,
+          13,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          1221,
+          325
+        ],
+        "sample": [
+          13,
+          39,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          1215,
+          638
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          1198,
+          645
+        ],
+        "sample": [
+          242,
+          243,
+          128
+        ]
+      }
+    ]
+  },
+  "1063-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "8cdd692502c86b7dd9b795d9bcd1862f7daa2ee2758dbe39a66e614743f877c4",
+    "texture_check_count": 89,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.35
+        ],
+        "pixel": [
+          468,
+          26
+        ],
+        "sample": [
+          13,
+          89,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.44999999999999996
+        ],
+        "pixel": [
+          447,
+          76
+        ],
+        "sample": [
+          13,
+          115,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          1162,
+          605
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          1142,
+          655
+        ],
+        "sample": [
+          242,
+          242,
+          128
+        ]
+      }
+    ]
+  },
+  "1064-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "f77704ff5f7e375cb20b22667fd601efadd3cbd33229a37177132b83c24a43d3",
+    "texture_check_count": 82,
+    "max_channel_error": 2,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.5499999999999999
+        ],
+        "pixel": [
+          14,
+          618
+        ],
+        "sample": [
+          13,
+          140,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.65
+        ],
+        "pixel": [
+          31,
+          625
+        ],
+        "sample": [
+          13,
+          166,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          174,
+          373
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          191,
+          380
+        ],
+        "sample": [
+          242,
+          243,
+          128
+        ]
+      }
+    ]
+  },
+  "1064-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "e1ae49c522c860d2e1b7a7563a7238c44db54fdd4bf7bc168cc8fa44e896ddef",
+    "texture_check_count": 89,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.35
+        ],
+        "pixel": [
+          13,
+          356
+        ],
+        "sample": [
+          13,
+          89,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.44999999999999996
+        ],
+        "pixel": [
+          34,
+          406
+        ],
+        "sample": [
+          13,
+          115,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          914,
+          275
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          935,
+          325
+        ],
+        "sample": [
+          242,
+          242,
+          128
+        ]
+      }
+    ]
+  },
+  "1068-0.25": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "5a0061d02af33cc41574ebe2d2e3936bb5a66837bf88bc106d1bda6281aa1ed1",
+    "texture_check_count": 80,
+    "max_channel_error": 1,
+    "representative_checks": [
+      {
+        "uv": [
+          0.05,
+          0.05
+        ],
+        "pixel": [
+          720,
+          485
+        ],
+        "sample": [
+          12,
+          13,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.05,
+          0.15
+        ],
+        "pixel": [
+          702,
+          485
+        ],
+        "sample": [
+          12,
+          39,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.75,
+          0.85
+        ],
+        "pixel": [
+          577,
+          709
+        ],
+        "sample": [
+          191,
+          216,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.75,
+          0.95
+        ],
+        "pixel": [
+          559,
+          709
+        ],
+        "sample": [
+          191,
+          242,
+          128
+        ]
+      }
+    ]
+  },
+  "1068-0.75": {
+    "direct": {
+      "red": 0,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "eafa588ab93b396665f9e2186f1c1e5a1e06d7a79a40136fbbd1fa36ef9afc87",
+    "texture_check_count": 80,
+    "max_channel_error": 0,
+    "representative_checks": [
+      {
+        "uv": [
+          0.25,
+          0.05
+        ],
+        "pixel": [
+          397,
+          689
+        ],
+        "sample": [
+          64,
+          13,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.25,
+          0.15
+        ],
+        "pixel": [
+          451,
+          689
+        ],
+        "sample": [
+          64,
+          38,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.85
+        ],
+        "pixel": [
+          828,
+          18
+        ],
+        "sample": [
+          242,
+          217,
+          128
+        ]
+      },
+      {
+        "uv": [
+          0.95,
+          0.95
+        ],
+        "pixel": [
+          882,
+          18
+        ],
+        "sample": [
+          242,
+          242,
+          128
+        ]
+      }
+    ]
+  }
+}

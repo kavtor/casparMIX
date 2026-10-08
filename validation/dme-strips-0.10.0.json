@@ -1,0 +1,55 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.10.0)",
+  "1384": {
+    "mid": {
+      "direct": {
+        "red": 460800,
+        "blue": 460800
+      },
+      "rendered_multiview": {
+        "red": 460800,
+        "blue": 460800
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "295ebf60cc08dbbad78c8a3be15e0420979d8173fcda812d9bb1596ee472421a"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    }
+  },
+  "1385": {
+    "mid": {
+      "direct": {
+        "red": 460800,
+        "blue": 460800
+      },
+      "rendered_multiview": {
+        "red": 460800,
+        "blue": 460800
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "23ad4db5771bdabde2ec3ee805f422f2d63e20c9c0066da359431872da35a7a7"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    }
+  }
+}

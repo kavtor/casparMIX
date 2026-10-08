@@ -1,0 +1,11 @@
+{
+  "static_image": {
+    "filename_with_spaces": true,
+    "rendered_background_pixel": [
+      0,
+      0,
+      255
+    ],
+    "no_source_slot": true
+  }
+}

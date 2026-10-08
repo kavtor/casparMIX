@@ -1,0 +1,653 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.14.0)",
+  "1051": {
+    "mid": {
+      "direct": {
+        "red": 756048,
+        "blue": 165552
+      },
+      "rendered_multiview": {
+        "red": 756048,
+        "blue": 165552
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "e640e684b0bc8930050d7a20ea896c01cfffc43d8ac8700c83fa82c1587e7958"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 493850,
+        "blue": 427750
+      },
+      "rendered_multiview": {
+        "red": 493850,
+        "blue": 427750
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "a9cf38a643d73e1abfb02736e703c62fce2bc42949e9d33cd3199c6c032912d3"
+    },
+    "reverse": {
+      "direct": {
+        "red": 427750,
+        "blue": 493850
+      },
+      "rendered_multiview": {
+        "red": 427750,
+        "blue": 493850
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "967791217164f51bfbbb6e94425cae802027cb55eb93bd74ef4c52050fb95635"
+    }
+  },
+  "1052": {
+    "mid": {
+      "direct": {
+        "red": 856575,
+        "blue": 65025
+      },
+      "rendered_multiview": {
+        "red": 856575,
+        "blue": 65025
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "742ecb1f21e08734e6703e232511545e914e872ef3517b5e21d54d17a3ecf5e1"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 594068,
+        "blue": 327532
+      },
+      "rendered_multiview": {
+        "red": 594068,
+        "blue": 327532
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "9448001c4847ac0af60fa8541ecbf704a1fe2df3eed378297736f107b3fdad37"
+    },
+    "reverse": {
+      "direct": {
+        "red": 327532,
+        "blue": 594068
+      },
+      "rendered_multiview": {
+        "red": 327532,
+        "blue": 594068
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "d39fa900e58ca3028c4cbd003d7d783aaa740f79be27dcbea0211b005bd13831"
+    }
+  },
+  "1053": {
+    "mid": {
+      "direct": {
+        "red": 755595,
+        "blue": 166005
+      },
+      "rendered_multiview": {
+        "red": 755595,
+        "blue": 166005
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "936aeb1c1284dd9420c1de59d43f381a30724e776668f35f8616af68971a2a23"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 493850,
+        "blue": 427750
+      },
+      "rendered_multiview": {
+        "red": 493850,
+        "blue": 427750
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "d2dd2f3c3d6db0dee816ef40be06f6df22743619544d0a4970267b39a34da8bd"
+    },
+    "reverse": {
+      "direct": {
+        "red": 427750,
+        "blue": 493850
+      },
+      "rendered_multiview": {
+        "red": 427750,
+        "blue": 493850
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "37b35c8b7b4fc844e048db65a916e826b1e9f721841080a0d8c870aab6e20717"
+    }
+  },
+  "1054": {
+    "mid": {
+      "direct": {
+        "red": 856830,
+        "blue": 64770
+      },
+      "rendered_multiview": {
+        "red": 856830,
+        "blue": 64770
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "07118d8f4c50e37fb89205b8c6dcbffcd7c5c5ae53186ce17bcb02ce614039cb"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 594068,
+        "blue": 327532
+      },
+      "rendered_multiview": {
+        "red": 594068,
+        "blue": 327532
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "a26565934fd063c0b963598e8b288429747792e259f7bf590fae3f68a048d575"
+    },
+    "reverse": {
+      "direct": {
+        "red": 327532,
+        "blue": 594068
+      },
+      "rendered_multiview": {
+        "red": 327532,
+        "blue": 594068
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "4717a41d766e3dfa21f7d3fdd94b3f435f1a14d339d2997a6806c98996ff2ff3"
+    }
+  },
+  "1055": {
+    "mid": {
+      "direct": {
+        "red": 856575,
+        "blue": 65025
+      },
+      "rendered_multiview": {
+        "red": 856575,
+        "blue": 65025
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "0d943794ea12634b6607f6ac3b29646c08cd03cb5e82bde9b875c53cd5f6a215"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 594068,
+        "blue": 327532
+      },
+      "rendered_multiview": {
+        "red": 594068,
+        "blue": 327532
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "519de1429ae1f9979d709c6bd5ffa779c7338e5cb7e5840f77fcd1c2dfa7f307"
+    },
+    "reverse": {
+      "direct": {
+        "red": 327532,
+        "blue": 594068
+      },
+      "rendered_multiview": {
+        "red": 327532,
+        "blue": 594068
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "c36d01c137bc81c15c69d483a77671e835f30f1ee922806030b0e30f2075e367"
+    }
+  },
+  "1056": {
+    "mid": {
+      "direct": {
+        "red": 756048,
+        "blue": 165552
+      },
+      "rendered_multiview": {
+        "red": 756048,
+        "blue": 165552
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "baa27e8815bb5911086725e7ceae88a298354ac2d5660015a76e16ee8c414e60"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 493850,
+        "blue": 427750
+      },
+      "rendered_multiview": {
+        "red": 493850,
+        "blue": 427750
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "99f2be1678d2a5f1455cc1712fb8d4d75f1e82df2070606210c3c3099213b3b7"
+    },
+    "reverse": {
+      "direct": {
+        "red": 427750,
+        "blue": 493850
+      },
+      "rendered_multiview": {
+        "red": 427750,
+        "blue": 493850
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "12b1f8caaf228d1fdd22018998a2560a180ce96093ea7f7aa4755168ea8c68d7"
+    }
+  },
+  "1057": {
+    "mid": {
+      "direct": {
+        "red": 856830,
+        "blue": 64770
+      },
+      "rendered_multiview": {
+        "red": 856830,
+        "blue": 64770
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "f864008fc511e3ac128acc4bb7114f16878711ae0fe1ebd3485ff259dcaf30cd"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 594068,
+        "blue": 327532
+      },
+      "rendered_multiview": {
+        "red": 594068,
+        "blue": 327532
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "e5abab0c099c7951d27bb26c5f43836ad7261ee56b93d920f003826a3a633040"
+    },
+    "reverse": {
+      "direct": {
+        "red": 327532,
+        "blue": 594068
+      },
+      "rendered_multiview": {
+        "red": 327532,
+        "blue": 594068
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "b59657ba55cdf60e055ad063aa73e54d409f1b272b4fb264d44e1d6d56c75966"
+    }
+  },
+  "1058": {
+    "mid": {
+      "direct": {
+        "red": 755595,
+        "blue": 166005
+      },
+      "rendered_multiview": {
+        "red": 755595,
+        "blue": 166005
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "41a2d13672b417ecbd07adaf640439ad680741530714a6c103740f5d3fcdc1ab"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 493850,
+        "blue": 427750
+      },
+      "rendered_multiview": {
+        "red": 493850,
+        "blue": 427750
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "89828551193b835f537c83b8ae92528578b11b6270959f5395598e3a7747cf2b"
+    },
+    "reverse": {
+      "direct": {
+        "red": 427750,
+        "blue": 493850
+      },
+      "rendered_multiview": {
+        "red": 427750,
+        "blue": 493850
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "21948749f994770d9d870f0d62c741f0bb9af0af4be82f81b90c61a60fbb5459"
+    }
+  },
+  "1061": {
+    "mid": {
+      "direct": {
+        "red": 708879,
+        "blue": 212721
+      },
+      "rendered_multiview": {
+        "red": 708879,
+        "blue": 212721
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "cf449d773646b878122e694ead34b9b654bcbfd264196fa8c5363daa2516e9b5"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 457655,
+        "blue": 463945
+      },
+      "rendered_multiview": {
+        "red": 457655,
+        "blue": 463945
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "f568cd3bd2f2de52f65faecb2aa5fb184453f9cba2c815963489f029a6b4f7d2"
+    },
+    "reverse": {
+      "direct": {
+        "red": 463945,
+        "blue": 457655
+      },
+      "rendered_multiview": {
+        "red": 463945,
+        "blue": 457655
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "aac8b7a1843af2399df1695685f87c8b7f1830570feb42a40902256c32d64a48"
+    }
+  },
+  "1062": {
+    "mid": {
+      "direct": {
+        "red": 709006,
+        "blue": 212594
+      },
+      "rendered_multiview": {
+        "red": 709006,
+        "blue": 212594
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "dd70b2a7174808b7a709da375b7c46ea3f53308a1ae3934fd0e0b25fa8fa5043"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 457655,
+        "blue": 463945
+      },
+      "rendered_multiview": {
+        "red": 457655,
+        "blue": 463945
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "f569615bf11838ae8350d871378f60fd300d30ab5632d0f19db34838120bbc71"
+    },
+    "reverse": {
+      "direct": {
+        "red": 463945,
+        "blue": 457655
+      },
+      "rendered_multiview": {
+        "red": 463945,
+        "blue": 457655
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "54fae58f80413e14efd71d02663bbb40391caade9a8982554474e92428621b14"
+    }
+  },
+  "1063": {
+    "mid": {
+      "direct": {
+        "red": 709006,
+        "blue": 212594
+      },
+      "rendered_multiview": {
+        "red": 709006,
+        "blue": 212594
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "0c232b8abdba97a2a6d2f60c7080518c019546fe53bfeec93b36e0778ab88e48"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 457655,
+        "blue": 463945
+      },
+      "rendered_multiview": {
+        "red": 457655,
+        "blue": 463945
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "4ab4b665e15bb986db639ae460e85fb0f1f75d975c8896467e41acf80f1f1162"
+    },
+    "reverse": {
+      "direct": {
+        "red": 463945,
+        "blue": 457655
+      },
+      "rendered_multiview": {
+        "red": 463945,
+        "blue": 457655
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "ea52079b5ad1fcc2a6823320b413130b69a956c4e62fc307dc262a272567192a"
+    }
+  },
+  "1064": {
+    "mid": {
+      "direct": {
+        "red": 708879,
+        "blue": 212721
+      },
+      "rendered_multiview": {
+        "red": 708879,
+        "blue": 212721
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "467e8937466bab245910a8397306eb402d886fcf7a296448e4dfac59f2cb2938"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 457655,
+        "blue": 463945
+      },
+      "rendered_multiview": {
+        "red": 457655,
+        "blue": 463945
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "a55da493809811f3faa6821d1c6bf15cd205a90055ad2697cc38ca70c315a779"
+    },
+    "reverse": {
+      "direct": {
+        "red": 463945,
+        "blue": 457655
+      },
+      "rendered_multiview": {
+        "red": 463945,
+        "blue": 457655
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "eb84886dc87c867894aca0fa62cc398791b68d22e59ebc0f36e83d4ff8da0c4e"
+    }
+  },
+  "1068": {
+    "mid": {
+      "direct": {
+        "red": 691200,
+        "blue": 230400
+      },
+      "rendered_multiview": {
+        "red": 691200,
+        "blue": 230400
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "8107e33c9022545e9f02176a6a023c1e05a34b3881ae406116260b57a565d379"
+    },
+    "end": {
+      "direct": {
+        "red": 0,
+        "blue": 921600
+      },
+      "rendered_multiview": {
+        "red": 0,
+        "blue": 921600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+    },
+    "normal": {
+      "direct": {
+        "red": 532800,
+        "blue": 388800
+      },
+      "rendered_multiview": {
+        "red": 532800,
+        "blue": 388800
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "7a827d64e09023005b5cebe52ef8214b99f39e6b5ceeb1b0f34ced1349a22647"
+    },
+    "reverse": {
+      "direct": {
+        "red": 388800,
+        "blue": 532800
+      },
+      "rendered_multiview": {
+        "red": 388800,
+        "blue": 532800
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "3d9a756f83c36009287d8c86f613d7fa36fc69e0d879b9b8a9c897ea6641d13f"
+    }
+  }
+}

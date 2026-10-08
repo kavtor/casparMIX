@@ -1,0 +1,31 @@
+{
+  "EBU75": {
+    "settled_frames": 30,
+    "mean_absolute_bgra_error": 0.0625,
+    "top_row_colors": 8,
+    "static": true,
+    "sha256": "bbbef85dcd804c700996df59ac7e788a49b15bfd6bd893e042ea0f4a4346f749"
+  },
+  "EBU100": {
+    "settled_frames": 30,
+    "mean_absolute_bgra_error": 0.03125,
+    "top_row_colors": 8,
+    "static": true,
+    "sha256": "96c69ff45ef9b901ee0f5d7e496c5a14307e9821fdb1ae2fe75276f1d9c6c929"
+  },
+  "SMPTESD": {
+    "settled_frames": 30,
+    "mean_absolute_bgra_error": 0.04791666666666667,
+    "top_row_colors": 7,
+    "static": true,
+    "sha256": "a29e3b63ef147ce8a01522bb9afc6a2aa3269a9b76e47ef2f29af9839523c437"
+  },
+  "SMPTEHD": {
+    "settled_frames": 30,
+    "mean_absolute_bgra_error": 0.0,
+    "top_row_colors": 8,
+    "static": true,
+    "sha256": "32324a059fdbd4287e12443eda347f427cd016e251ed9039faa8d7f15d24d3d8"
+  },
+  "invalid_pattern_rejected": true
+}

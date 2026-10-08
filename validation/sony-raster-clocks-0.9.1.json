@@ -1,0 +1,125 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.9.1)",
+  "24-vertices-5": {
+    "direct": {
+      "width": 220,
+      "height": 220,
+      "ratio": 1.0
+    },
+    "raw_multiview": {
+      "width": 220,
+      "height": 220,
+      "ratio": 1.0
+    }
+  },
+  "26-vertices-5": {
+    "direct": {
+      "width": 164,
+      "height": 145,
+      "ratio": 1.1310344827586207
+    },
+    "raw_multiview": {
+      "width": 164,
+      "height": 145,
+      "ratio": 1.1310344827586207
+    }
+  },
+  "27-vertices-5": {
+    "direct": {
+      "width": 356,
+      "height": 305,
+      "ratio": 1.1672131147540983
+    },
+    "raw_multiview": {
+      "width": 356,
+      "height": 305,
+      "ratio": 1.1672131147540983
+    }
+  },
+  "29-vertices-5": {
+    "direct": {
+      "width": 458,
+      "height": 416,
+      "ratio": 1.1009615384615385
+    },
+    "raw_multiview": {
+      "width": 458,
+      "height": 416,
+      "ratio": 1.1009615384615385
+    }
+  },
+  "49-vertices-3": {
+    "direct": {
+      "width": 368,
+      "height": 368,
+      "ratio": 1.0
+    },
+    "raw_multiview": {
+      "width": 368,
+      "height": 368,
+      "ratio": 1.0
+    }
+  },
+  "49-vertices-5": {
+    "direct": {
+      "width": 256,
+      "height": 255,
+      "ratio": 1.003921568627451
+    },
+    "raw_multiview": {
+      "width": 256,
+      "height": 255,
+      "ratio": 1.003921568627451
+    }
+  },
+  "49-vertices-6": {
+    "direct": {
+      "width": 228,
+      "height": 228,
+      "ratio": 1.0
+    },
+    "raw_multiview": {
+      "width": 228,
+      "height": 228,
+      "ratio": 1.0
+    }
+  },
+  "49-vertices-8": {
+    "direct": {
+      "width": 238,
+      "height": 238,
+      "ratio": 1.0
+    },
+    "raw_multiview": {
+      "width": 238,
+      "height": 238,
+      "ratio": 1.0
+    }
+  },
+  "clock_angles": [
+    {
+      "progress": 0.1,
+      "expected": 36.0,
+      "direct": 35,
+      "multiview": 35
+    },
+    {
+      "progress": 0.2,
+      "expected": 72.0,
+      "direct": 71,
+      "multiview": 71
+    },
+    {
+      "progress": 0.3,
+      "expected": 108.0,
+      "direct": 107,
+      "multiview": 107
+    },
+    {
+      "progress": 0.4,
+      "expected": 144.0,
+      "direct": 143,
+      "multiview": 143
+    }
+  ]
+}
