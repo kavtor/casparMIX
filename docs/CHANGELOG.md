@@ -130,7 +130,7 @@
 
 * Add opt-in `GRAPHICS` scenes: reusable cached FreeType text and rectangles,
   stereo-meter building blocks, grouped attack/release, local clock and heartbeat
-  watchdog conditions. No mixer, M/E or Strata-specific layout is built into the producer.
+  watchdog conditions. No mixer, M/E or kavtor-specific layout is built into the producer.
 * Bake static graphics in independent dirty regions only when visible content changes; level-only updates
   retain tiny cached GPU resources instead of uploading the whole overlay.
 * Add atomic bounded scene/value parsing and bounded text/animation caches.

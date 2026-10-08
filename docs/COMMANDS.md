@@ -1,4 +1,4 @@
-# Additive engine commands (casparMIX 0.2.1)
+# Additive engine commands
 
 ## Isolated rendered compositions
 
@@ -75,14 +75,15 @@ It accepts the same geometry parameters, but no border color/mode. Optional
 ## Compatibility and current limits
 
 The upstream command set and numeric version remain unchanged. `VERSION` also
-contains the patch version. Strata 0.9.0 requires casparMIX
-0.2.1 or later and uses these extensions directly; it does not support older engines.
+contains the patch version. [kavtor](https://github.com/kavtor/kavtor) uses these
+extensions directly; feature availability depends on the installed patch version.
+Versioned sections below identify when each command family was introduced. See
+the [current release](../README.md#current-release) and
+[Sony catalogue](SONY-CATALOGUE.md) for the implemented effects and remaining gaps.
 
-Native Sony transitions currently cover background video, not independent
-multi-keyer transition scheduling. Shadow modifiers are not yet native; Strata
-uses its HTML path when a shadow is configured at transition start. Do not add a
-shadow halfway through a native preview and expect it to appear. Unsupported
-patterns also retain the HTML path. Native 3D DME remains separate future work.
+Native wipes and 3D DME are engine primitives. Source assignments, M/E scheduling,
+keyer participation and operator controls belong to the mixer client. Unsupported
+Sony patterns reject execution rather than falling back to another effect.
 
 Validation uses progressive 720p50 RGB lossless captures and recorded audio.
 Interlaced operation, video-mode changes, long-running live sources and every
@@ -98,7 +99,7 @@ mixing graph, including inputs, M/E compositions, outputs and multiview:
 ```xml
 <channel>
   <video-mode>1080p5000</video-mode>
-  <sync-group>strata</sync-group>
+  <sync-group>kavtor</sync-group>
   <consumers />
 </channel>
 ```
@@ -200,7 +201,7 @@ Example scene before Base64 encoding:
 ```
 
 This adds no full-screen CEF replacement for arbitrary HTML templates. It is a
-small native graphics API, reusable by clients independently of Strata.
+small native graphics API, reusable by clients independently of kavtor.
 
 ## Native DME transitions (0.5.0)
 
@@ -257,7 +258,7 @@ without resetting the clock or progress. The previous fill remains until the new
 producer is ready. The native destination handoff remains unchanged: fill applies
 to the transition composition, not a permanent recolouring of its destination.
 The mixer client validates routing cycles and decides whether live updates are
-permitted; Strata allows them in rehearsal and snapshots programme takes.
+permitted; kavtor allows them in rehearsal and snapshots programme takes.
 
 ### Mosaic wipe size (0.9.3)
 

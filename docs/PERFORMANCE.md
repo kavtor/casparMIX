@@ -23,7 +23,7 @@ python3 casparmix/tools/benchmark_mixer.py --binary /path/to/casparcg \
 ```
 
 Repeat at `--fps 75`. kavtor builds the updated optional receive probe with
-`-DSTRATA_BUILD_NDI_DIAGNOSTICS=ON`; the NDI SDK is required only for that tool.
+`-DKAVTOR_BUILD_NDI_DIAGNOSTICS=ON`; the NDI SDK is required only for that tool.
 The renderer keeps its existing dependencies.
 
 Pass criteria: mean producer cadence at least 99.5% of target, media-clock
