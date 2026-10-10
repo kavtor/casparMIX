@@ -1,0 +1,121 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 267577d47e497a0630bc454b3f74c4fd9a10ced4..2b7c5ae01848a77d95e2792eb83ab605c9aed91a 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.4.1
++0.4.2
+diff --git a/src/modules/image/producer/graphics_producer.cpp b/src/modules/image/producer/graphics_producer.cpp
+index c3f3c74e52fdd5d5d5ec594c21e9c3a8db95301c..e1bf30d8d34949915f084e6462aacd09cfc7fb7d 100644
+--- a/src/modules/image/producer/graphics_producer.cpp
++++ b/src/modules/image/producer/graphics_producer.cpp
+@@ -49,16 +49,10 @@ class graphics_producer final : public core::frame_producer
+     size_t                            cache_bytes_ = 0;
+     std::map<std::string, double>     bar_levels_;
+     core::draw_frame                  latest_;
+-    struct tile
+-    {
+-        resource    frame;
+-        int         x, y, w, h;
+-        std::string key;
+-    };
+-    std::vector<tile> tiles_;
+-    std::string       static_key_;
+-    int               width_, height_;
+-    resource          bitmap(int width, int height, const std::vector<unsigned char>& pixels)
++    resource                          static_frame_;
++    std::string                       static_key_;
++    int                               width_, height_;
++    resource                          bitmap(int width, int height, const std::vector<unsigned char>& pixels)
+     {
+         core::pixel_format_desc desc(core::pixel_format::bgra);
+         desc.planes.emplace_back(width, height, 4);
+@@ -376,8 +370,6 @@ class graphics_producer final : public core::frame_producer
+         if (width < 1 || height < 1 || width > 4096 || height > 2160)
+             throw std::invalid_argument("Invalid GRAPHICS viewport");
+         std::lock_guard<std::mutex> guard(mutex_);
+-        if (width_ != width || height_ != height)
+-            tiles_.clear();
+         scene_     = std::move(candidate);
+         width_     = width;
+         height_    = height;
+@@ -446,23 +438,12 @@ class graphics_producer final : public core::frame_producer
+         boost::property_tree::write_json(signature, visible, false);
+         auto key = std::to_string(width_) + ":" + std::to_string(height_) + ":" + signature.str();
+         if (key != static_key_) {
+-            // Independent dirty regions prevent a small clock/statistic change
+-            // from rasterizing and uploading the complete multiview overlay.
+-            struct operation
+-            {
+-                resource    image;
+-                int         x, y, w, h;
+-                std::string key;
+-            };
+-            std::vector<operation> operations;
++            std::vector<unsigned char> pixels(size_t(width_) * height_ * 4, 0);
+             for (auto& item : visible) {
+-                auto&              n = item.second;
+-                int                x = std::round(n.get<double>("x", 0)), y = std::round(n.get<double>("y", 0)),
+-                                   w = std::round(n.get<double>("w", 0)), h = std::round(n.get<double>("h", 0));
+-                std::ostringstream token;
+-                boost::property_tree::write_json(token, n, false);
+-                auto id = token.str();
+-                auto c  = n.get<std::string>("color", "#ffffff");
++                auto& n = item.second;
++                int   x = std::round(n.get<double>("x", 0)), y = std::round(n.get<double>("y", 0)),
++                      w = std::round(n.get<double>("w", 0)), h = std::round(n.get<double>("h", 0));
++                auto  c = n.get<std::string>("color", "#ffffff");
+                 if (n.get<std::string>("type") == "text") {
+                     auto r     = text(n.get<std::string>("text", ""),
+                                       n.get<int>("size", 18),
+@@ -479,44 +460,17 @@ class graphics_producer final : public core::frame_producer
+                     auto background = n.get<std::string>("background", "");
+                     if (!background.empty()) {
+                         int pad = n.get<int>("padding", 6);
+-                        operations.push_back(
+-                            {solid(background), x - pad, y - 3, r.width + pad * 2, r.height + 6, id + ":background"});
++                        composite(pixels, solid(background), x - pad, y - 3, r.width + pad * 2, r.height + 6);
+                     }
+-                    operations.push_back({r, x, y, r.width, r.height, id});
++                    composite(pixels, r, x, y, r.width, r.height);
+                 } else
+-                    operations.push_back({solid(c), x, y, w, h, id});
+-            }
+-            const int columns = (width_ + 511) / 512, rows = (height_ + 255) / 256;
+-            if (tiles_.size() != size_t(columns * rows))
+-                tiles_.clear();
+-            if (tiles_.empty())
+-                for (int row = 0; row < rows; ++row)
+-                    for (int col = 0; col < columns; ++col) {
+-                        int x = col * 512, y = row * 256;
+-                        tiles_.push_back({{}, x, y, std::min(512, width_ - x), std::min(256, height_ - y), ""});
+-                    }
+-            for (auto& t : tiles_) {
+-                std::vector<const operation*> included;
+-                std::string                   region = std::to_string(width_) + ":" + std::to_string(height_);
+-                for (auto& op : operations)
+-                    if (op.w > 0 && op.h > 0 && op.x < t.x + t.w && op.y < t.y + t.h && op.x + op.w > t.x &&
+-                        op.y + op.h > t.y) {
+-                        included.push_back(&op);
+-                        region += op.key;
+-                    }
+-                if (region == t.key)
+-                    continue;
+-                std::vector<unsigned char> pixels(size_t(t.w) * t.h * 4, 0);
+-                for (auto* op : included)
+-                    composite(pixels, op->image, op->x - t.x, op->y - t.y, op->w, op->h, t.w, t.h);
+-                t.frame = bitmap(t.w, t.h, pixels);
+-                t.key   = std::move(region);
++                    composite(pixels, solid(c), x, y, w, h);
+             }
+-            static_key_ = std::move(key);
++            static_frame_ = bitmap(width_, height_, pixels);
++            static_key_   = std::move(key);
+         }
+         std::vector<core::draw_frame> frames;
+-        for (auto& t : tiles_)
+-            place(frames, t.frame, t.x, t.y, t.w, t.h);
++        frames.push_back(static_frame_.frame);
+         std::map<std::string, double> animated;
+         for (const auto& n : bars) {
+             double  target = n.get<double>("value", 0);

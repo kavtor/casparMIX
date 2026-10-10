@@ -1,0 +1,93 @@
+diff --git a/src/core/producer/wipe/sony_wipe_producer.cpp b/src/core/producer/wipe/sony_wipe_producer.cpp
+index 64f7c28d0ad57de9cc8e7536c2f2eb02a3537bf3..28d2de815ca2df5b500c246afd368800b791bb8a 100644
+--- a/src/core/producer/wipe/sony_wipe_producer.cpp
++++ b/src/core/producer/wipe/sony_wipe_producer.cpp
+@@ -41,7 +41,7 @@ class sony_wipe_producer final : public frame_producer
+             if (key == L"PROGRESS") { next.progress = number(value,0,1); manual = true; }
+             else if (key == L"SOFT") next.soft = number(value,0,100);
+             else if (key == L"BORDER") next.border = number(value,0,100);
+-            else if (key == L"ASPECT") next.aspect = number(value,0.05,20);
++            else if (key == L"ASPECT") next.aspect = number(value,0.01,1000);
+             else if (key == L"MULTI") {
+                 auto count = number(value,1,16);
+                 if (count != std::floor(count) || (count!=1 && count!=2 && count!=4 && count!=9 && count!=16))
+@@ -79,6 +79,12 @@ class sony_wipe_producer final : public frame_producer
+         wipe_.code = code;
+         update(params);
+     }
++    draw_frame frame_at(double progress) {
++        std::lock_guard<std::mutex> lock(mutex_);
++        wipe_.progress=progress;
++        duration_=0;
++        return snapshot();
++    }
+     draw_frame receive_impl(video_field field, int) override
+     {
+         std::lock_guard<std::mutex> lock(mutex_);
+@@ -119,19 +125,20 @@ class sony_wipe_producer final : public frame_producer
+ }
+ 
+ namespace {
+-draw_frame opaque_colour(const frame_producer_dependencies& deps, void* tag, const std::wstring& colour)
++uint32_t opaque_colour_value(const std::wstring& colour)
+ {
+     uint32_t value;
+     if (!try_get_color(colour,value) || (value >> 24) != 0xff)
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"BORDERCOLOR requires an opaque colour"));
+-    return create_color_frame(tag,deps.frame_factory,value);
++    return value;
+ }
+ 
+ class sony_wipe_transition final : public frame_producer
+ {
+     spl::shared_ptr<frame_producer> destination_;
+     spl::shared_ptr<frame_producer> source_ = frame_producer::empty();
+-    spl::shared_ptr<frame_producer> mask_;
++    spl::shared_ptr<sony_wipe_producer> mask_;
++    uint32_t colour_value_;
+     draw_frame colour_;
+     spl::shared_ptr<frame_factory> frame_factory_;
+     int duration_;
+@@ -145,7 +152,8 @@ class sony_wipe_transition final : public frame_producer
+     sony_wipe_transition(const frame_producer_dependencies& deps,
+         const spl::shared_ptr<frame_producer>& destination,
+         const spl::shared_ptr<frame_producer>& mask, int duration, bool manual, bool draw_border, const std::wstring& colour)
+-        : destination_(destination), mask_(mask), colour_(opaque_colour(deps,this,colour)),
++        : destination_(destination), mask_(spl::dynamic_pointer_cast<sony_wipe_producer>(mask)),
++          colour_value_(opaque_colour_value(colour)), colour_(create_color_frame(this,deps.frame_factory,colour_value_)),
+           frame_factory_(deps.frame_factory), duration_(duration), manual_(manual), draw_border_(draw_border) {}
+     void leading_producer(const spl::shared_ptr<frame_producer>& source) override { source_ = source; }
+     draw_frame first_frame(video_field field) override { return destination_->first_frame(field); }
+@@ -160,8 +168,8 @@ class sony_wipe_transition final : public frame_producer
+         ready_ = destination_->is_ready();
+         if (!ready_) return source_->receive(field,nb_samples);
+         if (!manual_ && field != video_field::b) progress_ = duration_ == 1 ? 1 : std::min(1.0,double(current_)/double(duration_-1));
+-        mask_->call({L"PROGRESS",std::to_wstring(progress_)}).get();
+-        auto mask = mask_->receive(field,nb_samples);
++        // Frame-local progress never needs AMCP tokenization, a future or string conversion.
++        auto mask = mask_->frame_at(progress_);
+         auto incoming = destination_->receive(field,nb_samples);
+         if (!incoming) incoming = destination_->last_frame(field);
+         auto outgoing = source_->receive(field,nb_samples);
+@@ -202,6 +210,7 @@ class sony_wipe_transition final : public frame_producer
+         }
+         // Validate every option before committing any picture/state change.
+         auto colour = colour_;
++        auto colour_value = colour_value_;
+         std::vector<std::wstring> matte_tokens;
+         for(size_t i=0;i<tokens.size();i+=2) {
+             if(i+1>=tokens.size())
+@@ -210,11 +219,12 @@ class sony_wipe_transition final : public frame_producer
+                 uint32_t value;
+                 if(!try_get_color(tokens[i+1],value) || (value>>24)!=0xff)
+                     CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"BORDERCOLOR requires an opaque colour"));
+-                colour = create_color_frame(this,frame_factory_,value);
++                if(value!=colour_value) {colour=create_color_frame(this,frame_factory_,value);colour_value=value;}
+             } else { matte_tokens.push_back(tokens[i]);matte_tokens.push_back(tokens[i+1]); }
+         }
+         mask_->call(matte_tokens).get();
+         colour_ = colour;
++        colour_value_ = colour_value;
+         for (size_t i=0;i+1<tokens.size();i+=2)
+             if(boost::iequals(tokens[i],L"PROGRESS")) { progress_=std::stod(tokens[i+1]);manual_=true; }
+         return make_ready_future(std::wstring(L"OK"));

@@ -1,0 +1,40 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 04a373efe6ba8b6928cd5214e1fc3aef70c59002..c5523bd09b187d88eb8caeb979852a301d6c2728 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.16.0
++0.17.0
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+index c55d68ce559f195d8901070bf7d07bebe8f04bcb..b4968ad7283d417f9021e1abfe4fb02472b8f1da 100644
+--- a/src/core/producer/wipe/dme_producer.cpp
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -226,6 +226,15 @@ draw_frame sony_primitive_frame(int code,draw_frame a,draw_frame b,double t,bool
+         project_sony_plane(b,vertical,sign*(1-t)*1.5707963267948966,1,aspect);
+         return draw_frame::over(a,b);
+     }
++    if(code==1201){
++        // Frame In: incoming texture grows from the centre over stationary A.
++        // Linear size is a project default; Sony multi-stage preparation and
++        // dead-band placement are not implied by this transition primitive.
++        auto& x=b.transform().image_transform;x.enable_geometry_modifiers=true;
++        if(t<=0)x.opacity=0; // Keep a non-singular transform at the zero endpoint.
++        else {x.fill_scale={t,t};x.fill_translation={(1-t)/2,(1-t)/2};}
++        return draw_frame::over(a,b);
++    }
+     if(code>=1355&&code<=1358){
+         // Expand a true reflected 2x2 tile group from the specified corner.
+         // Its normal tile becomes full-frame; reflected neighbours leave the
+diff --git a/src/core/producer/wipe/sony_dme_catalogue.h b/src/core/producer/wipe/sony_dme_catalogue.h
+index e0394fe3210f09501d56803789eb04cf309ccf67..723923ceded3a5d55872458f23c1a6cc248d8c7e 100644
+--- a/src/core/producer/wipe/sony_dme_catalogue.h
++++ b/src/core/producer/wipe/sony_dme_catalogue.h
+@@ -7,7 +7,7 @@ namespace caspar::core::sony_dme {
+ // TODO: unresolved IDs are reserved; detailed reasons accompany the review
+ // inventory in Strata. They must never execute a substituted primitive.
+ inline constexpr std::array<int,269> known{1001,1002,1003,1004,1005,1006,1007,1008,1011,1012,1013,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1041,1042,1043,1044,1045,1046,1047,1048,1051,1052,1053,1054,1055,1056,1057,1058,1061,1062,1063,1064,1068,1071,1072,1074,1076,1077,1088,1091,1092,1093,1094,1101,1102,1103,1104,1109,1110,1121,1122,1124,1131,1132,1133,1135,1201,1202,1203,1204,1205,1206,1207,1208,1209,1221,1222,1223,1224,1225,1251,1301,1302,1303,1304,1305,1306,1307,1308,1309,1310,1311,1312,1313,1315,1316,1317,1318,1321,1322,1323,1324,1325,1326,1327,1328,1329,1330,1331,1332,1333,1335,1336,1337,1338,1341,1342,1343,1344,1345,1346,1347,1348,1349,1350,1355,1356,1357,1358,1365,1371,1372,1378,1379,1381,1384,1385,1386,1387,1388,1389,1391,1393,1394,1396,1398,1399,1701,1702,2601,2602,2603,2604,2605,2606,2607,2608,2621,2622,2623,2624,2625,2626,2627,2628,2631,2632,2633,2634,2642,2644,2651,2652,2661,2662,2701,2702,2703,2704,2705,2706,2707,2708,2709,2710,2711,2712,2713,2715,2716,2717,2718,2721,2722,2723,2724,2725,2726,2727,2728,2729,2730,2731,2732,2733,2735,2736,2737,2738,2741,2742,2743,2744,2745,2746,2747,2748,2749,2750,2801,2802,2803,2804,2811,2812,2813,2814,2851,2852,2853,2854,2861,2862,2863,2864,3601,7001,7002,7003,7004,7005,7006,7007,7008,7021,7022,7023,7024,7025,7026,7027,7028,7029,7030,7031,7201,7202,7203,7204,7205,7206,7207,7208,7221,7222,7223,7224};
+-inline constexpr std::array<int,71> ready{1001,1002,1003,1004,1005,1006,1007,1008,1011,1012,1013,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1041,1042,1043,1044,1045,1046,1047,1048,1051,1052,1053,1054,1055,1056,1057,1058,1061,1062,1063,1064,1068,1101,1102,1103,1104,1121,1122,1355,1356,1357,1358,1384,1385,2601,2602,2603,2604,2605,2606,2607,2608,2621,2622,2623,2624,2625,2626,2627,2628};
++inline constexpr std::array<int,72> ready{1001,1002,1003,1004,1005,1006,1007,1008,1011,1012,1013,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1041,1042,1043,1044,1045,1046,1047,1048,1051,1052,1053,1054,1055,1056,1057,1058,1061,1062,1063,1064,1068,1101,1102,1103,1104,1121,1122,1201,1355,1356,1357,1358,1384,1385,2601,2602,2603,2604,2605,2606,2607,2608,2621,2622,2623,2624,2625,2626,2627,2628};
+ inline bool implemented(int code){return std::binary_search(ready.begin(),ready.end(),code);}
+ inline bool reserved(int code){return std::binary_search(known.begin(),known.end(),code);}
+ }
