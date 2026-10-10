@@ -1,0 +1,156 @@
+diff --git a/src/accelerator/ogl/image/image_kernel.cpp b/src/accelerator/ogl/image/image_kernel.cpp
+index a5636e52059c73dcfeb6c4775d42832e55811e6c..ae36d37f6fafeacaa6c516a97b8736c868c8a0b3 100644
+--- a/src/accelerator/ogl/image/image_kernel.cpp
++++ b/src/accelerator/ogl/image/image_kernel.cpp
+@@ -246,6 +246,14 @@ struct image_kernel::impl
+             shader_->set("sony_center", wipe.x, wipe.y);
+             shader_->set("sony_reverse", wipe.reverse);
+         }
++        const auto& alpha=transforms.image_transform.alpha;
++        shader_->set("alpha_mode",alpha.mode);
++        shader_->set("alpha_range",alpha.low,alpha.high);
++        shader_->set("alpha_invert",alpha.invert);
++        shader_->set("alpha_mask",alpha.mask);
++        shader_->set("alpha_mask_invert",alpha.mask_invert);
++        shader_->set("alpha_mask_min",alpha.rectangle[0],alpha.rectangle[1]);
++        shader_->set("alpha_mask_max",alpha.rectangle[2],alpha.rectangle[3]);
+         shader_->set("opacity", transforms.image_transform.is_key ? 1.0 : transforms.image_transform.opacity);
+ 
+         if (transforms.image_transform.chroma.enable) {
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 9501707e85ce0cef0bd2667b583c15b2cb229945..1033c82bb9125ac6c275da7c7de8f8647d8fe64a 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -822,6 +822,11 @@ float sony_matte(vec2 packed_uv)
+     return outgoing ? (inner >= 1.0 ? 0.0 : clamp((1.0-outer)/(1.0-inner),0.0,1.0)) : inner;
+ }
+ 
++uniform int alpha_mode;
++uniform vec2 alpha_range;
++uniform bool alpha_invert,alpha_mask,alpha_mask_invert;
++uniform vec2 alpha_mask_min,alpha_mask_max;
++
+ void main()
+ {
+     vec4 color = get_rgba_color();
+@@ -836,8 +841,22 @@ void main()
+     }
+     if (is_straight_alpha)
+         color.rgb *= color.a;
++    float source_alpha=color.a;
++    vec3 original_fill=color.a>0.000001?color.rgb/color.a:vec3(0);
+     if (chroma)
+         color = chroma_key(color);
++    if(alpha_mode!=0){
++        vec3 fill=color.a>0.000001?color.rgb/color.a:original_fill;
++        float matte=alpha_mode==2?clamp((dot(original_fill,vec3(.0722,.7152,.2126))-alpha_range.x)/(alpha_range.y-alpha_range.x),0.0,1.0):color.a;
++        if(alpha_invert)matte=1.0-matte;
++        if(alpha_mode==2)matte*=source_alpha;
++        if(alpha_mask){
++            vec2 p=TexCoord2.st;
++            float inside=step(alpha_mask_min.x,p.x)*step(alpha_mask_min.y,p.y)*(1.0-step(alpha_mask_max.x,p.x))*(1.0-step(alpha_mask_max.y,p.y));
++            matte*=alpha_mask_invert?1.0-inside:inside;
++        }
++        color=vec4(fill*matte,matte);
++    }
+     if(levels)
+         color.rgb = LevelsControl(color.rgb, min_input, gamma, max_input, min_output, max_output);
+     if(csb)
+diff --git a/src/accelerator/ogl/util/transforms.cpp b/src/accelerator/ogl/util/transforms.cpp
+index c0c0b286f5c908fbb1162d858c3c581ab844d0c3..827e391512bc4c5a0c2ed84bdbbdec8256389c7c 100644
+--- a/src/accelerator/ogl/util/transforms.cpp
++++ b/src/accelerator/ogl/util/transforms.cpp
+@@ -70,6 +70,7 @@ void apply_transform_colour_values(core::image_transform& self, const core::imag
+     self.is_mix |= other.is_mix;
+     self.blend_mode = std::max(self.blend_mode, other.blend_mode);
+     self.layer_depth += other.layer_depth;
++    if(other.alpha.mode!=0)self.alpha=other.alpha;
+     if (other.wipe.code != 0) self.wipe = other.wipe;
+     if(other.surface.mode!=0)self.surface=other.surface;
+ }
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index ac454c6a1fc3f05f60d3772b45f0b1a5db4b9f87..54d1a4f2a4a7f6afc19897c88a7b73c17ccc54fb 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.12.0
++0.13.0
+diff --git a/src/core/frame/frame_transform.cpp b/src/core/frame/frame_transform.cpp
+index 6979b06bcc19152c6712c22e10e41e82596c6496..23ab252aed177250b58699fe1271a8901d1ef6c1 100644
+--- a/src/core/frame/frame_transform.cpp
++++ b/src/core/frame/frame_transform.cpp
+@@ -69,6 +69,7 @@ image_transform image_transform::tween(double                 time,
+                                        const tweener&         tween)
+ {
+     image_transform result;
++    result.alpha=dest.alpha;
+ 
+     result.brightness          = do_tween(time, source.brightness, dest.brightness, duration, tween);
+     result.contrast            = do_tween(time, source.contrast, dest.contrast, duration, tween);
+@@ -140,6 +141,7 @@ bool operator==(const sony_wipe& lhs, const sony_wipe& rhs)
+ bool operator==(const image_transform& lhs, const image_transform& rhs)
+ {
+     if(lhs.surface.mode!=rhs.surface.mode||!eq(lhs.surface.progress,rhs.surface.progress)||!eq(lhs.surface.radius,rhs.surface.radius)||lhs.surface.reverse!=rhs.surface.reverse)return false;
++    if(lhs.alpha.mode!=rhs.alpha.mode||lhs.alpha.invert!=rhs.alpha.invert||lhs.alpha.mask!=rhs.alpha.mask||lhs.alpha.mask_invert!=rhs.alpha.mask_invert||!eq(lhs.alpha.low,rhs.alpha.low)||!eq(lhs.alpha.high,rhs.alpha.high)||!boost::range::equal(lhs.alpha.rectangle,rhs.alpha.rectangle,eq))return false;
+     return lhs.wipe == rhs.wipe && eq(lhs.opacity, rhs.opacity) && eq(lhs.contrast, rhs.contrast) && eq(lhs.brightness, rhs.brightness) &&
+                eq(lhs.saturation, rhs.saturation) && boost::range::equal(lhs.anchor, rhs.anchor, eq) &&
+                boost::range::equal(lhs.fill_translation, rhs.fill_translation, eq) &&
+diff --git a/src/core/frame/frame_transform.h b/src/core/frame/frame_transform.h
+index ac5e3eda7754cbd0cf2fe540eee2574a2675014f..9527f3afefe8d9556718bd8677b2fb63d2aed22a 100644
+--- a/src/core/frame/frame_transform.h
++++ b/src/core/frame/frame_transform.h
+@@ -100,8 +100,16 @@ struct page_surface final {
+     bool reverse=false;
+ };
+ 
++struct alpha_key {
++    int mode=0; // 0 off, 1 existing alpha, 2 luminance extraction.
++    double low=0,high=1;
++    bool invert=false,mask=false,mask_invert=false;
++    std::array<double,4> rectangle={.1,.1,.9,.9};
++};
++
+ struct image_transform final
+ {
++    alpha_key alpha;
+     sony_wipe wipe;
+     page_surface surface;
+     double opacity    = 1.0;
+diff --git a/src/protocol/amcp/AMCPCommandsImpl.cpp b/src/protocol/amcp/AMCPCommandsImpl.cpp
+index 758b5b069a7fb4b6cf02c2e247f8a382b55784e7..b385110a41c97375142d5e04797dd17ac2950f1d 100644
+--- a/src/protocol/amcp/AMCPCommandsImpl.cpp
++++ b/src/protocol/amcp/AMCPCommandsImpl.cpp
+@@ -928,6 +928,25 @@ std::future<std::wstring> mixer_invert_command(command_context& ctx)
+     return make_ready_future<std::wstring>(L"202 MIXER OK\r\n");
+ }
+ 
++std::future<std::wstring> mixer_alpha_key_command(command_context& ctx)
++{
++    if(ctx.parameters.empty()) {
++        auto current=get_current_transform(ctx).share();
++        return std::async(std::launch::deferred,[current](){const auto a=current.get().image_transform.alpha;
++            std::wstring result=L"201 MIXER OK\r\n"+std::to_wstring(a.mode)+L" "+std::to_wstring(a.low)+L" "+std::to_wstring(a.high)+L" "+std::to_wstring(a.invert)+L" "+std::to_wstring(a.mask)+L" "+std::to_wstring(a.mask_invert);
++            for(double v:a.rectangle)result+=L" "+std::to_wstring(v);return result+L"\r\n";});
++    }
++    if(ctx.parameters.size()!=10)CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"ALPHAKEY expects mode, low, high, invert, mask, mask-invert, left, top, right, bottom"));
++    core::alpha_key a;const auto mode=boost::to_upper_copy(ctx.parameters[0]);
++    if(mode==L"OFF")a.mode=0;else if(mode==L"LINEAR")a.mode=1;else if(mode==L"LUMA")a.mode=2;else CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Invalid alpha key mode"));
++    auto number=[&](int i){size_t used=0;double v=std::stod(ctx.parameters[i],&used);if(used!=ctx.parameters[i].size()||!std::isfinite(v)||v<0||v>1)CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Invalid alpha key number"));return v;};
++    auto flag=[&](int i){if(ctx.parameters[i]!=L"0"&&ctx.parameters[i]!=L"1")CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Invalid alpha key flag"));return ctx.parameters[i]==L"1";};
++    a.low=number(1);a.high=number(2);a.invert=flag(3);a.mask=flag(4);a.mask_invert=flag(5);for(int i=0;i<4;++i)a.rectangle[i]=number(6+i);
++    if(a.low>=a.high||a.rectangle[0]>=a.rectangle[2]||a.rectangle[1]>=a.rectangle[3])CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Invalid alpha key range or rectangle"));
++    transforms_applier transforms(ctx);transforms.add(stage::transform_tuple_t(ctx.layer_index(),[a](frame_transform t){t.image_transform.alpha=a;return t;},0,tweener(L"linear")));transforms.apply();
++    return make_ready_future<std::wstring>(L"202 MIXER OK\r\n");
++}
++
+ std::future<std::wstring> mixer_chroma_command(command_context& ctx)
+ {
+     if (ctx.parameters.empty()) {
+@@ -1757,6 +1776,7 @@ void register_commands(std::shared_ptr<amcp_command_repository_wrapper>& repo)
+ 
+     repo->register_channel_command(L"Mixer Commands", L"MIXER KEYER", mixer_keyer_command, 0);
+     repo->register_channel_command(L"Mixer Commands", L"MIXER INVERT", mixer_invert_command, 0);
++    repo->register_channel_command(L"Mixer Commands",L"MIXER ALPHAKEY",mixer_alpha_key_command,0);
+     repo->register_channel_command(L"Mixer Commands", L"MIXER CHROMA", mixer_chroma_command, 0);
+     repo->register_channel_command(L"Mixer Commands", L"MIXER BLEND", mixer_blend_command, 0);
+     repo->register_channel_command(L"Mixer Commands", L"MIXER OPACITY", mixer_opacity_command, 0);

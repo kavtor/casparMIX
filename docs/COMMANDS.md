@@ -422,3 +422,16 @@ position, with left, right, top and bottom edge pivots respectively.
 1041–1044 trajectory. `REVERSE` retraces the selected geometry. This replaces the
 incorrect centre-axis interpretation of 1045–1048. Sources, endpoints and audio
 crossfade policy are unchanged.
+
+### Sony edge page turns and rolls (0.20.0)
+
+```text
+PLAY 3-1 route://2 RENDERED DMENATIVE 25 SONY_1301 MANUAL 1 REVERSE 0
+CALL 3-1 "PROGRESS .5"
+```
+
+1301–1304 are edge Page Turn; 1321–1324 are edge Roll. In each block the
+directions are right-to-left, left-to-right, bottom-to-top and top-to-bottom.
+REVERSE exchanges A/B and reverses the same trajectory; final output remains B.
+The default radius is .16 of the bend-axis extent. Sony keyframe/multi-action
+variants and parameter editors remain pending.

@@ -1,0 +1,24 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 1d0ba9ea182b0f7354f3daf12120744ec5e0c2f8..267577d47e497a0630bc454b3f74c4fd9a10ced4 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.4.0
++0.4.1
+diff --git a/src/modules/image/producer/graphics_producer.cpp b/src/modules/image/producer/graphics_producer.cpp
+index bcd358f57a98bcf1130d4a9780279c393e5564d1..c3f3c74e52fdd5d5d5ec594c21e9c3a8db95301c 100644
+--- a/src/modules/image/producer/graphics_producer.cpp
++++ b/src/modules/image/producer/graphics_producer.cpp
+@@ -410,8 +410,10 @@ class graphics_producer final : public core::frame_producer
+         tree              visible;
+         auto              nodes = scene_.get_child_optional("nodes");
+         std::vector<tree> bars;
+-        if (nodes)
+-            std::set<std::string> ids;
++        if (!nodes || nodes->empty()) {
++            latest_ = core::draw_frame::empty();
++            return latest_;
++        }
+         for (auto& item : *nodes) {
+             auto n = item.second;
+             if (n.get<bool>("lostOnly", false) && !lost)

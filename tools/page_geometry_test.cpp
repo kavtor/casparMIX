@@ -6,13 +6,15 @@ int main()
 {
     auto quad = caspar::core::frame_geometry::get_default().data();
     using caspar::core::page_surface;
-    for (int mode : {1, 2})
+    for (int mode : {1, 2, 3})
+      for (bool vertical : {false,true})
         for (bool reverse : {false, true})
             for (double radius : {.03, .16, .4})
                 for (int n = 0; n <= 100; n++) {
                     page_surface s;
                     s.mode     = mode;
                     s.reverse  = reverse;
+                    s.vertical = vertical;
                     s.radius   = radius;
                     s.progress = n / 100.;
                     auto faces = caspar::core::page_mesh(quad, s);
