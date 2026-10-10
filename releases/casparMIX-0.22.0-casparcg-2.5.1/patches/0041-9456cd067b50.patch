@@ -1,0 +1,14 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 02d86e83bf623ced8c25e24bd53428c83710ef1e..8808a95868f0601cf03973283b254fb4abe5e951 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -772,7 +772,8 @@ float sony_distance(vec2 p, float t, float cell_aspect)
+         else if(sony_code==604){pivot.y+=.5;direction=0.0;}
+         else {pivot.y-=.5;direction=3.141592654;}
+         vec2 point=p-pivot;point.x*=raster/ar;
+-        return -sony_fan(point,direction,(1-t)*1.570796327);
++        // Incoming B opens from the middle ray, not outside a closing A wedge.
++        return sony_fan(point,direction,t*1.570796327);
+     }
+     if(sony_code==156||sony_code==624)
+         return sony_fan(vec2(q.x*raster/ar,q.y),sony_code==156?0.0:4.712388980,t*3.141592654);

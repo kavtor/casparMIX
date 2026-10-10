@@ -174,3 +174,26 @@ START -100 starts the first lane and +100 the last, then wraps lane order.
 ROWNO 1–64 controls horizontal rows or vertical lanes. Default: 8/-100/0.
 Native command preparation exists; dedicated controller/touch parameter menus
 remain pending. 87 wipes execute, 29 remain reserved (224–247 and 270–274).
+
+## Random mosaic and Diamond Dust (0.22.0)
+
+Sony 273 switches seeded rectangular tiles. Sony 274 expands actual diamond
+particles. Both are evaluated only from progress: a held T-bar holds the image,
+and rewinding retraces it. They do not alias the existing Dust Mix transition.
+The manual (printed pp.142–143) documents H Size, V Size and Volatility for 273,
+and H Size, V Size and Flash Rate for 274. Neutral defaults are H_SIZE/V_SIZE
+0.02 of picture height and generation rate 75 (0–100). Equal H/V dimensions
+have equal physical size on every output. VOLATILITY controls the 273 threshold
+curve; FLASH_RATE controls the spread of 274 particle start times. These time
+laws are project interpretations, not measurements of Sony hardware. Dedicated
+LCD/touch parameter editors and operator morphology approval remain pending.
+SOFT and BORDER use the same native contour, bounded by particle dimensions.
+
+```text
+PLAY 3-1 route://2 RENDERED WIPESONY 25 SONY 273 MANUAL 1 H_SIZE .04 V_SIZE .04 VOLATILITY 75
+CALL 3-1 "PROGRESS .5"
+PLAY 3-1 route://2 RENDERED WIPESONY 25 SONY 274 MANUAL 1 H_SIZE .02 V_SIZE .02 FLASH_RATE 75
+```
+
+89 wipes execute; 27 remain reserved (224–247 and 270–272). The three old
+random presets still require identified morphology; they are not aliases.

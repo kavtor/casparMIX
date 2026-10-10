@@ -1,0 +1,637 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 9e11b32fcaa96816319e5d0dcff9fb2873f04061..1d0ba9ea182b0f7354f3daf12120744ec5e0c2f8 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.3.1
++0.4.0
+diff --git a/src/modules/image/CMakeLists.txt b/src/modules/image/CMakeLists.txt
+index ecedbf811e95ef727e36fa54012d23705ee63151..cee0b2fec3777bc5bf9d14e340af2e8f17f450bc 100644
+--- a/src/modules/image/CMakeLists.txt
++++ b/src/modules/image/CMakeLists.txt
+@@ -1,11 +1,16 @@
+ cmake_minimum_required (VERSION 3.16)
+ project (image)
+ 
++find_package(Freetype REQUIRED)
++
+ set(SOURCES
+ 		consumer/image_consumer.cpp
+ 		consumer/image_consumer.h
+ 
+-		producer/image_producer.cpp
++		producer/graphics_producer.cpp
++        producer/graphics_producer.h
++
++        producer/image_producer.cpp
+ 		producer/image_producer.h
+ 
+ 		producer/image_scroll_producer.cpp
+@@ -40,5 +45,6 @@ source_group(sources ./*)
+ 
+ target_link_libraries(image PRIVATE
+ 	ffmpeg
++    Freetype::Freetype
+ )
+ 
+diff --git a/src/modules/image/image.cpp b/src/modules/image/image.cpp
+index 2c0244dfa07de8fb841c45ea4c32e46df0cbab3b..1ea5cea5cd6e60a2f206b3f3a032196320b4282b 100644
+--- a/src/modules/image/image.cpp
++++ b/src/modules/image/image.cpp
+@@ -23,6 +23,7 @@
+ 
+ #include "consumer/image_consumer.h"
+ #include "producer/image_producer.h"
++#include "producer/graphics_producer.h"
+ #include "producer/image_scroll_producer.h"
+ 
+ #include <common/utf.h>
+@@ -31,6 +32,7 @@ namespace caspar { namespace image {
+ 
+ void init(const core::module_dependencies& dependencies)
+ {
++    dependencies.producer_registry->register_producer_factory(L"Native Graphics Producer", create_graphics_producer);
+     dependencies.producer_registry->register_producer_factory(L"Image Scroll Producer", create_scroll_producer);
+     dependencies.producer_registry->register_producer_factory(L"Image Producer", create_producer);
+     dependencies.consumer_registry->register_consumer_factory(L"Image Consumer", create_consumer);
+diff --git a/src/modules/image/producer/graphics_producer.cpp b/src/modules/image/producer/graphics_producer.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..bcd358f57a98bcf1130d4a9780279c393e5564d1
+--- /dev/null
++++ b/src/modules/image/producer/graphics_producer.cpp
+@@ -0,0 +1,563 @@
++/* Copyright (c) 2026 casparMIX contributors. SPDX-License-Identifier: GPL-3.0-or-later */
++#include "graphics_producer.h"
++#include <boost/algorithm/string.hpp>
++#include <boost/property_tree/json_parser.hpp>
++#include <common/base64.h>
++#include <common/env.h>
++#include <common/except.h>
++#include <common/future.h>
++#include <common/utf.h>
++#include <core/frame/frame.h>
++#include <core/frame/frame_factory.h>
++#include <core/frame/frame_transform.h>
++#include <core/frame/pixel_format.h>
++#include <ft2build.h>
++#include FT_FREETYPE_H
++#include FT_SYNTHESIS_H
++#include <algorithm>
++#include <array>
++#include <chrono>
++#include <cmath>
++#include <cstring>
++#include <ctime>
++#include <filesystem>
++#include <map>
++#include <mutex>
++#include <set>
++#include <sstream>
++
++namespace caspar::image {
++namespace {
++using tree  = boost::property_tree::ptree;
++using clock = std::chrono::steady_clock;
++struct resource
++{
++    core::draw_frame                            frame;
++    int                                         width, height;
++    std::shared_ptr<std::vector<unsigned char>> pixels;
++};
++class graphics_producer final : public core::frame_producer
++{
++    core::frame_producer_dependencies deps_;
++    FT_Library                        library_   = nullptr;
++    FT_Face                           face_      = nullptr;
++    FT_Face                           mono_face_ = nullptr;
++    std::mutex                        mutex_;
++    tree                              scene_;
++    clock::time_point                 heartbeat_ = clock::now(), last_ = clock::now();
++    std::map<std::string, resource>   cache_;
++    size_t                            cache_bytes_ = 0;
++    std::map<std::string, double>     bar_levels_;
++    core::draw_frame                  latest_;
++    struct tile
++    {
++        resource    frame;
++        int         x, y, w, h;
++        std::string key;
++    };
++    std::vector<tile> tiles_;
++    std::string       static_key_;
++    int               width_, height_;
++    resource          bitmap(int width, int height, const std::vector<unsigned char>& pixels)
++    {
++        core::pixel_format_desc desc(core::pixel_format::bgra);
++        desc.planes.emplace_back(width, height, 4);
++        auto f = deps_.frame_factory->create_frame(this, desc);
++        std::memcpy(f.image_data(0).begin(), pixels.data(), pixels.size());
++        return {core::draw_frame(std::move(f)), width, height, std::make_shared<std::vector<unsigned char>>(pixels)};
++    }
++    std::array<unsigned char, 4> color(const std::string& text)
++    {
++        if (text.size() != 7 && text.size() != 9)
++            throw std::invalid_argument("GRAPHICS color requires #RRGGBB or #RRGGBBAA");
++        if (text[0] != '#' || text.find_first_not_of("0123456789abcdefABCDEF", 1) != std::string::npos)
++            throw std::invalid_argument("Invalid GRAPHICS color");
++        const auto n = std::stoul(text.substr(1), nullptr, 16);
++        if (text.size() == 7)
++            return {static_cast<unsigned char>(n),
++                    static_cast<unsigned char>(n >> 8),
++                    static_cast<unsigned char>(n >> 16),
++                    255};
++        return {static_cast<unsigned char>(n >> 8),
++                static_cast<unsigned char>(n >> 16),
++                static_cast<unsigned char>(n >> 24),
++                static_cast<unsigned char>(n)};
++    }
++    resource solid(const std::string& c)
++    {
++        auto key   = "color:" + c;
++        auto found = cache_.find(key);
++        if (found != cache_.end())
++            return found->second;
++        auto p = color(c);
++        for (int i = 0; i < 3; ++i)
++            p[i] = unsigned(p[i]) * p[3] / 255;
++        auto r = bitmap(1, 1, {p[0], p[1], p[2], p[3]});
++        cache_.emplace(key, r);
++        cache_bytes_ += 4;
++        return r;
++    }
++    resource text(const std::string& value,
++                  int                size,
++                  int                maximum,
++                  const std::string& c,
++                  bool               bold    = false,
++                  bool               mono    = false,
++                  int                spacing = 0)
++    {
++        const std::string key   = std::string(mono ? "mono:" : "sans:") + std::to_string(spacing) + ":" +
++                                  std::string(bold ? "bold:" : "text:") + std::to_string(size) + ":" +
++                                  std::to_string(maximum) + ":" + c + ":" + value;
++        auto              found = cache_.find(key);
++        if (found != cache_.end())
++            return found->second;
++        auto face = mono && mono_face_ ? mono_face_ : face_;
++        FT_Set_Pixel_Sizes(face, 0, size);
++        auto load = [&](uint32_t cp) {
++            auto err = FT_Load_Char(face, cp, FT_LOAD_DEFAULT);
++            if (err)
++                return err;
++            if (bold) {
++                const auto advance = face->glyph->advance;
++                FT_GlyphSlot_Embolden(face->glyph);
++                if (mono)
++                    face->glyph->advance = advance;
++            }
++            return FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
++        };
++        auto                  chars = u16(value); // UTF-16 surrogate pairs are joined below.
++        std::vector<uint32_t> codepoints;
++        for (size_t i = 0; i < chars.size(); ++i) {
++            uint32_t cp = chars[i];
++            if (cp >= 0xd800 && cp <= 0xdbff && i + 1 < chars.size()) {
++                uint32_t lo = chars[i + 1];
++                if (lo >= 0xdc00 && lo <= 0xdfff) {
++                    cp = 0x10000 + ((cp - 0xd800) << 10) + (lo - 0xdc00);
++                    ++i;
++                }
++            }
++            codepoints.push_back(cp);
++        }
++        int advance = 0;
++        for (auto cp : codepoints)
++            if (!load(cp))
++                advance += (face->glyph->advance.x >> 6) + spacing;
++        if (advance + 4 > maximum && maximum > size) {
++            load(0x2026);
++            const int ellipsis = (face->glyph->advance.x >> 6) + spacing;
++            while (!codepoints.empty() && advance + ellipsis + 4 > maximum) {
++                load(codepoints.back());
++                advance -= (face->glyph->advance.x >> 6) + spacing;
++                codepoints.pop_back();
++            }
++            codepoints.push_back(0x2026);
++            advance += ellipsis;
++        }
++        int                        w = std::max(1, std::min(maximum, advance + 4)), h = size + 8;
++        std::vector<unsigned char> pixels(size_t(w) * h * 4, 0);
++        auto                       ink      = color(c);
++        int                        pen      = 2;
++        const int                  baseline = face->size->metrics.ascender >> 6;
++        for (auto cp : codepoints) {
++            if (load(cp))
++                continue;
++            const auto g = face->glyph;
++            for (unsigned y = 0; y < g->bitmap.rows; ++y)
++                for (unsigned x = 0; x < g->bitmap.width; ++x) {
++                    int px = pen + g->bitmap_left + x, py = baseline - g->bitmap_top + y;
++                    if (px < 0 || py < 0 || px >= w || py >= h)
++                        continue;
++                    const auto* row = g->bitmap.buffer +
++                                      (g->bitmap.pitch >= 0 ? y : g->bitmap.rows - 1 - y) * std::abs(g->bitmap.pitch);
++                    unsigned    a   = unsigned(row[x]) * ink[3] / 255;
++                    auto*       dst = &pixels[(size_t(py) * w + px) * 4];
++                    for (int channel = 0; channel < 3; ++channel)
++                        dst[channel] = unsigned(ink[channel]) * a / 255;
++                    dst[3] = a;
++                }
++            pen += (g->advance.x >> 6) + spacing;
++            if (pen >= w)
++                break;
++        }
++        auto r = bitmap(w, h, pixels);
++        cache_bytes_ += pixels.size();
++        cache_.emplace(key, r);
++        return r;
++    }
++    void place(std::vector<core::draw_frame>& frames, const resource& r, double x, double y, double w, double h)
++    {
++        if (w <= 0 || h <= 0)
++            return;
++        auto f                                         = r.frame;
++        f.transform().image_transform.fill_translation = {x / width_, y / height_};
++        f.transform().image_transform.fill_scale       = {w / width_, h / height_};
++        frames.push_back(std::move(f));
++    }
++    void composite(std::vector<unsigned char>& output,
++                   const resource&             r,
++                   int                         x,
++                   int                         y,
++                   int                         w,
++                   int                         h,
++                   int                         canvas_width  = 0,
++                   int                         canvas_height = 0)
++    {
++        if (!canvas_width)
++            canvas_width = width_;
++        if (!canvas_height)
++            canvas_height = height_;
++        if (w <= 0 || h <= 0)
++            return;
++        for (int py = std::max(0, y); py < std::min(canvas_height, y + h); ++py)
++            for (int px = std::max(0, x); px < std::min(canvas_width, x + w); ++px) {
++                const int      sx = (int64_t(px - x) * r.width) / w, sy = (int64_t(py - y) * r.height) / h;
++                const auto*    src     = &(*r.pixels)[(size_t(sy) * r.width + sx) * 4];
++                auto*          dst     = &output[(size_t(py) * canvas_width + px) * 4];
++                const unsigned inverse = 255 - src[3];
++                for (int c = 0; c < 4; ++c)
++                    dst[c] = std::min(255u, unsigned(src[c]) + unsigned(dst[c]) * inverse / 255);
++            }
++    }
++
++  public:
++    explicit graphics_producer(const core::frame_producer_dependencies& deps)
++        : deps_(deps)
++        , width_(deps.format_desc.width)
++        , height_(deps.format_desc.height)
++    {
++        if (FT_Init_FreeType(&library_))
++            throw std::runtime_error("Cannot initialize FreeType");
++        std::string font = u8(env::properties().get(L"configuration.graphics.font", L""));
++        if (font.empty())
++            for (const auto* candidate : {"/usr/share/fonts/TTF/arial.ttf",
++                                          "/usr/share/fonts/noto/NotoSans-Regular.ttf",
++                                          "/usr/share/fonts/TTF/DejaVuSans.ttf",
++                                          "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
++                                          "C:/Windows/Fonts/arial.ttf"})
++                if (std::filesystem::exists(candidate)) {
++                    font = candidate;
++                    break;
++                }
++        if (font.empty() || FT_New_Face(library_, font.c_str(), 0, &face_)) {
++            FT_Done_FreeType(library_);
++            library_ = nullptr;
++            throw std::runtime_error("Set configuration.graphics.font to a readable TrueType font");
++        }
++        std::string mono = u8(env::properties().get(L"configuration.graphics.monospace-font", L""));
++        if (mono.empty())
++            for (const auto* candidate : {"/usr/share/fonts/noto/NotoSansMono-Regular.ttf",
++                                          "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
++                                          "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
++                                          "/usr/share/fonts/TTF/cour.ttf",
++                                          "C:/Windows/Fonts/cour.ttf"})
++                if (std::filesystem::exists(candidate)) {
++                    mono = candidate;
++                    break;
++                }
++        if (!mono.empty() && FT_New_Face(library_, mono.c_str(), 0, &mono_face_)) {
++            FT_Done_Face(face_);
++            FT_Done_FreeType(library_);
++            face_    = nullptr;
++            library_ = nullptr;
++            throw std::runtime_error("Cannot load configuration.graphics.monospace-font");
++        }
++    }
++    ~graphics_producer() override
++    {
++        if (mono_face_)
++            FT_Done_Face(mono_face_);
++        if (face_)
++            FT_Done_Face(face_);
++        if (library_)
++            FT_Done_FreeType(library_);
++    }
++    std::future<std::wstring> call(const std::vector<std::wstring>& params) override
++    {
++        if (params.empty())
++            throw std::invalid_argument("GRAPHICS expects SCENE or HEARTBEAT");
++        if (boost::iequals(params[0], L"HEARTBEAT")) {
++            std::lock_guard<std::mutex> guard(mutex_);
++            heartbeat_ = clock::now();
++            return make_ready_future<std::wstring>(L"OK");
++        }
++        if (boost::iequals(params[0], L"VALUES")) {
++            if (params.size() != 2 || params[1].size() > 128 * 1024)
++                throw std::invalid_argument("GRAPHICS expects VALUES base64-json");
++            auto               data = from_base64(u8(params[1]));
++            tree               changes;
++            std::istringstream input(std::string(data.begin(), data.end()));
++            boost::property_tree::read_json(input, changes);
++            if (changes.size() > 2048)
++                throw std::invalid_argument("Too many GRAPHICS values");
++            std::map<std::string, double> updates;
++            for (auto& entry : changes) {
++                double v = entry.second.get_value<double>();
++                if (entry.first.size() > 128 || !std::isfinite(v) || v < 0 || v > 1)
++                    throw std::invalid_argument("Invalid GRAPHICS value");
++                updates.emplace(entry.first, v);
++            }
++            std::lock_guard<std::mutex>  guard(mutex_);
++            auto                         nodes = scene_.get_child_optional("nodes");
++            std::map<std::string, tree*> targets;
++            if (nodes)
++                for (auto& node : *nodes)
++                    if (node.second.get<std::string>("type") == "bar")
++                        targets.emplace(node.second.get<std::string>("id", ""), &node.second);
++            for (const auto& update : updates)
++                if (!targets.count(update.first))
++                    throw std::invalid_argument("Unknown GRAPHICS bar ID");
++            for (const auto& update : updates)
++                targets.at(update.first)->put("value", update.second);
++            heartbeat_ = clock::now();
++            return make_ready_future<std::wstring>(L"OK");
++        }
++        if (!boost::iequals(params[0], L"SCENE") || params.size() != 2 || params[1].size() > 512 * 1024)
++            throw std::invalid_argument("GRAPHICS expects SCENE base64-json (max 512 KiB)");
++        auto               decoded = from_base64(u8(params[1]));
++        tree               candidate;
++        std::istringstream input(std::string(decoded.begin(), decoded.end()));
++        boost::property_tree::read_json(input, candidate);
++        double timeout = candidate.get<double>("timeout", 5);
++        if (!std::isfinite(timeout) || timeout < .1 || timeout > 3600)
++            throw std::invalid_argument("Invalid GRAPHICS timeout");
++        auto nodes = candidate.get_child_optional("nodes");
++        if (!nodes || nodes->size() > 2048)
++            throw std::invalid_argument("GRAPHICS requires up to 2048 nodes");
++        std::set<std::string> ids;
++        for (auto& item : *nodes) {
++            auto& n    = item.second;
++            auto  kind = n.get<std::string>("type");
++            if (kind != "rect" && kind != "text" && kind != "bar" && kind != "clock")
++                throw std::invalid_argument("Unknown GRAPHICS node type");
++            for (auto name : {"x", "y", "w", "h"}) {
++                double v = n.get<double>(name, 0);
++                if (!std::isfinite(v) || std::abs(v) > 16384)
++                    throw std::invalid_argument("Invalid GRAPHICS geometry");
++            }
++            if (kind == "bar") {
++                auto id = n.get<std::string>("id", "");
++                if (id.empty() || !ids.insert(id).second)
++                    throw std::invalid_argument("GRAPHICS bar IDs must be nonempty and unique");
++            }
++            color(n.get<std::string>("color", "#ffffff"));
++            int size = n.get<int>("size", 18);
++            if (size < 6 || size > 256)
++                throw std::invalid_argument("Invalid GRAPHICS font size");
++            if (n.get<std::string>("text", "").size() > 2048)
++                throw std::invalid_argument("GRAPHICS text too long");
++            if (n.get<std::string>("group", "").size() > 128 || n.get<std::string>("id", "").size() > 128)
++                throw std::invalid_argument("GRAPHICS ID too long");
++            double low = n.get<double>("minimum", 0), high = n.get<double>("maximum", 1);
++            if (!std::isfinite(low) || !std::isfinite(high) || low < 0 || high > 1 || high <= low)
++                throw std::invalid_argument("Invalid GRAPHICS bar range");
++            const auto background = n.get<std::string>("background", "");
++            if (!background.empty())
++                color(background);
++            int spacing = n.get<int>("spacing", 0);
++            if (spacing < 0 || spacing > 16)
++                throw std::invalid_argument("Invalid GRAPHICS text spacing");
++            auto font = n.get<std::string>("font", "sans");
++            if (font != "sans" && font != "mono")
++                throw std::invalid_argument("Invalid GRAPHICS font alias");
++            n.get<bool>("bold", false);
++            int pad = n.get<int>("padding", 6);
++            if (pad < 0 || pad > 64)
++                throw std::invalid_argument("Invalid GRAPHICS padding");
++            n.get<bool>("hideOnLost", false);
++            n.get<bool>("vertical", false);
++            n.get<bool>("lostOnly", false);
++            n.get<int>("blink", 0);
++            double v = n.get<double>("value", 0);
++            if (!std::isfinite(v) || v < 0 || v > 1)
++                throw std::invalid_argument("Invalid GRAPHICS bar value");
++        }
++        int width  = candidate.get<int>("width", deps_.format_desc.width),
++            height = candidate.get<int>("height", deps_.format_desc.height);
++        if (width < 1 || height < 1 || width > 4096 || height > 2160)
++            throw std::invalid_argument("Invalid GRAPHICS viewport");
++        std::lock_guard<std::mutex> guard(mutex_);
++        if (width_ != width || height_ != height)
++            tiles_.clear();
++        scene_     = std::move(candidate);
++        width_     = width;
++        height_    = height;
++        heartbeat_ = clock::now();
++        std::map<std::string, double> retained;
++        for (auto& item : scene_.get_child("nodes"))
++            if (item.second.get<std::string>("type") == "bar") {
++                auto id      = item.second.get<std::string>("group", item.second.get<std::string>("id", ""));
++                auto found   = bar_levels_.find(id);
++                retained[id] = found == bar_levels_.end() ? 0 : found->second;
++            }
++        bar_levels_ = std::move(retained);
++        return make_ready_future<std::wstring>(L"OK");
++    }
++    core::draw_frame receive_impl(core::video_field, int) override
++    {
++        std::lock_guard<std::mutex> guard(mutex_);
++        auto                        now = clock::now();
++        double                      dt  = std::chrono::duration<double>(now - last_).count();
++        last_                           = now;
++        // Bounded immutable texture cache. Existing draw frames keep their own references.
++        if (cache_.size() > 512 || cache_bytes_ > 32 * 1024 * 1024) {
++            cache_.clear();
++            cache_bytes_ = 0;
++        }
++        const bool lost  = std::chrono::duration<double>(now - heartbeat_).count() > scene_.get<double>("timeout", 5);
++        const auto phase = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
++        // Static text/shapes are baked only when their visible content changes.
++        // Meter levels use tiny shared textures, never a full-raster upload.
++        tree              visible;
++        auto              nodes = scene_.get_child_optional("nodes");
++        std::vector<tree> bars;
++        if (nodes)
++            std::set<std::string> ids;
++        for (auto& item : *nodes) {
++            auto n = item.second;
++            if (n.get<bool>("lostOnly", false) && !lost)
++                continue;
++            int blink = n.get<int>("blink", 0);
++            if (blink > 0 && (phase / blink) % 2)
++                continue;
++            auto kind = n.get<std::string>("type");
++            if (kind == "bar") {
++                if (!lost || !n.get<bool>("hideOnLost", false))
++                    bars.push_back(n);
++                continue;
++            }
++            if (kind == "clock") {
++                std::time_t t = std::time(nullptr);
++                std::tm     local{};
++#ifdef _WIN32
++                localtime_s(&local, &t);
++#else
++                localtime_r(&t, &local);
++#endif
++                char buffer[16];
++                std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &local);
++                n.put("text", buffer);
++                n.put("type", "text");
++            }
++            visible.push_back({"", n});
++        }
++        std::ostringstream signature;
++        boost::property_tree::write_json(signature, visible, false);
++        auto key = std::to_string(width_) + ":" + std::to_string(height_) + ":" + signature.str();
++        if (key != static_key_) {
++            // Independent dirty regions prevent a small clock/statistic change
++            // from rasterizing and uploading the complete multiview overlay.
++            struct operation
++            {
++                resource    image;
++                int         x, y, w, h;
++                std::string key;
++            };
++            std::vector<operation> operations;
++            for (auto& item : visible) {
++                auto&              n = item.second;
++                int                x = std::round(n.get<double>("x", 0)), y = std::round(n.get<double>("y", 0)),
++                                   w = std::round(n.get<double>("w", 0)), h = std::round(n.get<double>("h", 0));
++                std::ostringstream token;
++                boost::property_tree::write_json(token, n, false);
++                auto id = token.str();
++                auto c  = n.get<std::string>("color", "#ffffff");
++                if (n.get<std::string>("type") == "text") {
++                    auto r     = text(n.get<std::string>("text", ""),
++                                      n.get<int>("size", 18),
++                                      std::max(1, w),
++                                      c,
++                                      n.get<bool>("bold", false),
++                                      n.get<std::string>("font", "sans") == "mono",
++                                      n.get<int>("spacing", 0));
++                    auto align = n.get<std::string>("align", "left");
++                    if (align == "center")
++                        x += (w - r.width) / 2;
++                    if (align == "right")
++                        x += w - r.width;
++                    auto background = n.get<std::string>("background", "");
++                    if (!background.empty()) {
++                        int pad = n.get<int>("padding", 6);
++                        operations.push_back(
++                            {solid(background), x - pad, y - 3, r.width + pad * 2, r.height + 6, id + ":background"});
++                    }
++                    operations.push_back({r, x, y, r.width, r.height, id});
++                } else
++                    operations.push_back({solid(c), x, y, w, h, id});
++            }
++            const int columns = (width_ + 511) / 512, rows = (height_ + 255) / 256;
++            if (tiles_.size() != size_t(columns * rows))
++                tiles_.clear();
++            if (tiles_.empty())
++                for (int row = 0; row < rows; ++row)
++                    for (int col = 0; col < columns; ++col) {
++                        int x = col * 512, y = row * 256;
++                        tiles_.push_back({{}, x, y, std::min(512, width_ - x), std::min(256, height_ - y), ""});
++                    }
++            for (auto& t : tiles_) {
++                std::vector<const operation*> included;
++                std::string                   region = std::to_string(width_) + ":" + std::to_string(height_);
++                for (auto& op : operations)
++                    if (op.w > 0 && op.h > 0 && op.x < t.x + t.w && op.y < t.y + t.h && op.x + op.w > t.x &&
++                        op.y + op.h > t.y) {
++                        included.push_back(&op);
++                        region += op.key;
++                    }
++                if (region == t.key)
++                    continue;
++                std::vector<unsigned char> pixels(size_t(t.w) * t.h * 4, 0);
++                for (auto* op : included)
++                    composite(pixels, op->image, op->x - t.x, op->y - t.y, op->w, op->h, t.w, t.h);
++                t.frame = bitmap(t.w, t.h, pixels);
++                t.key   = std::move(region);
++            }
++            static_key_ = std::move(key);
++        }
++        std::vector<core::draw_frame> frames;
++        for (auto& t : tiles_)
++            place(frames, t.frame, t.x, t.y, t.w, t.h);
++        std::map<std::string, double> animated;
++        for (const auto& n : bars) {
++            double  target = n.get<double>("value", 0);
++            auto    id     = n.get<std::string>("group", n.get<std::string>("id", ""));
++            double& level  = bar_levels_[id];
++            if (!animated.count(id)) {
++                level        = target >= level ? target : target + (level - target) * std::exp(-std::min(dt, .1) / .18);
++                animated[id] = level;
++            }
++            const double low = n.get<double>("minimum", 0), high = n.get<double>("maximum", 1);
++            double       shown = std::clamp(animated[id] - low, 0., high - low) / (high - low);
++            double       x = n.get<double>("x", 0), y = n.get<double>("y", 0), w = n.get<double>("w", 0),
++                         h = n.get<double>("h", 0);
++            auto         c = n.get<std::string>("color", "#ffffff");
++            if (n.get<bool>("vertical", false))
++                place(frames, solid(c), x, y + h * (1 - shown), w, h * shown);
++            else
++                place(frames, solid(c), x, y, w * shown, h);
++        }
++        latest_ = core::draw_frame(std::move(frames));
++        return latest_;
++    }
++    core::draw_frame last_frame(core::video_field) override
++    {
++        std::lock_guard<std::mutex> guard(mutex_);
++        return latest_;
++    }
++    bool                 is_ready() override { return true; }
++    std::wstring         name() const override { return L"graphics"; }
++    std::wstring         print() const override { return L"graphics[cached native scene]"; }
++    core::monitor::state state() const override
++    {
++        core::monitor::state s;
++        s["graphics/native"] = true;
++        return s;
++    }
++};
++} // namespace
++spl::shared_ptr<core::frame_producer> create_graphics_producer(const core::frame_producer_dependencies& d,
++                                                               const std::vector<std::wstring>&         p)
++{
++    if (p.empty() || !boost::iequals(p[0], L"GRAPHICS"))
++        return core::frame_producer::empty();
++    return spl::make_shared<graphics_producer>(d);
++}
++} // namespace caspar::image
+diff --git a/src/modules/image/producer/graphics_producer.h b/src/modules/image/producer/graphics_producer.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..21c1e23758e0360d4f316b7ff72a5e8719fc2074
+--- /dev/null
++++ b/src/modules/image/producer/graphics_producer.h
+@@ -0,0 +1,6 @@
++#pragma once
++#include <core/producer/frame_producer.h>
++namespace caspar::image {
++spl::shared_ptr<core::frame_producer> create_graphics_producer(const core::frame_producer_dependencies&,
++                                                               const std::vector<std::wstring>&);
++}

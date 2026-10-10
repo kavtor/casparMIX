@@ -7,15 +7,15 @@ M/E scheduling, source assignments, panel behavior and UI belong there.
 
 ## Current release
 
-**CasparCG 2.5.1 + casparMIX 0.21.0**, pinned to upstream `v2.5.1-stable`.
+**CasparCG 2.5.1 + casparMIX 0.22.0**, pinned to upstream `v2.5.1-stable`.
 The combined distribution patch and ordered individual patches live in
-[releases/casparMIX-0.21.0-casparcg-2.5.1](releases/casparMIX-0.21.0-casparcg-2.5.1).
+[releases/casparMIX-0.22.0-casparcg-2.5.1](releases/casparMIX-0.22.0-casparcg-2.5.1).
 The patch is a distribution format; internal changes remain individually
 reviewable and can be proposed to upstream. No full engine fork is duplicated here.
 
 ```sh
 # In a clean CasparCG 2.5.1 stable source checkout:
-patch -p1 < /path/to/casparMIX-0.21.0-casparcg-2.5.1.patch
+patch -p1 < /path/to/casparMIX-0.22.0-casparcg-2.5.1.patch
 # Then configure/build/package CasparCG using your normal platform recipe.
 ```
 
@@ -32,7 +32,7 @@ alpha/LUMA processing, standard color bars, cached multiview graphics and
 consumer-free audio metering. Existing upstream commands remain available.
 The banner preserves the upstream version and appends the patch version.
 
-Current catalogues: 87 wipes and 80 DME presets. Pending IDs reject execution
+Current catalogues: 89 wipes and 80 DME presets. Pending IDs reject execution
 rather than silently substituting an effect. Operator review and performance
 limits are documented. SPLIT 1011–1013 use operator-confirmed NORM entry and REV exit (issue #2).
 Edge-hinged 1041–1048 now distinguish far/near entry (issue #9).
@@ -47,7 +47,7 @@ These do not change the reserved Sony catalogue count; see [Dust Mix and borders
 ## Development and validation
 
 ```sh
-python3 tools/verify_release.py --release releases/casparMIX-0.21.0-casparcg-2.5.1
+python3 tools/verify_release.py --release releases/casparMIX-0.22.0-casparcg-2.5.1
 ```
 
 This checks SHA-256 and applies combined/ordered forms to the exact upstream

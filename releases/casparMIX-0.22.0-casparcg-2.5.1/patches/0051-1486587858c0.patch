@@ -1,0 +1,107 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 556cfe90ad12007e7ade0f25064a7ac96a8adac5..133650b681c199158269e92e3e61820c4ef8461b 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -844,6 +844,28 @@ float dust_coverage(vec2 p,float progress) {
+     return mix(progress,coverage,dust_ratio);
+ }
+ 
++// Sony random catalogue patterns are distinct from Dust Mix. Fixed cell seeds
++// and progress-only evaluation make held frames and rewinds reproducible.
++float sony_random_distance(vec2 p,float progress) {
++    vec2 size=max(dust_size,vec2(.001));
++    vec2 uv=vec2(p.x*sony_output_aspect,p.y)/size;
++    vec2 cell=floor(uv),local=fract(uv)-vec2(.5);
++    float seed=dust_hash(cell,0.0);
++    if(sony_code==273) {
++        // Volatility changes the rate of generation, never a wall-clock seed.
++        float rate=exp2((dust_flash-50.0)/50.0);
++        float threshold=pow(progress,1.0/rate);
++        vec2 edge=(vec2(.5)-abs(local))*size;
++        float distance=min(edge.x,edge.y);
++        return seed<=threshold?distance:-min(size.x,size.y);
++    }
++    float start=seed*.8*dust_flash/100.0;
++    float radius=clamp((progress-start)/(1.0-start),0.0,1.0);
++    // An L1 contour produces actual diamonds, including their tips. Equal
++    // physical sizes produce equal-width/height particles on every output.
++    return (radius-abs(local.x)-abs(local.y))*min(size.x,size.y)*.707106781;
++}
++
+ uniform int sony_border_side;
+ uniform float sony_inner_soft,sony_outer_soft;
+ float sony_matte(vec2 packed_uv)
+@@ -861,7 +883,7 @@ float sony_matte(vec2 packed_uv)
+     float t = clamp(sony_progress, 0.0, 1.0);
+     if (t <= 0.0) return sony_role != 0 ? 0.0 : outgoing ? 1.0 : 0.0;
+     if (t >= 1.0) return sony_role == 2 ? 0.0 : sony_role == 1 ? 1.0 : outgoing ? 0.0 : 1.0;
+-    if(sony_code==274){
++    if(sony_code==-1){
+         float coverage=dust_coverage(p,sony_reverse?1.0-t:t);
+         if(sony_reverse)coverage=1.0-coverage;
+         if(sony_role==2)return 0.0;
+@@ -870,10 +892,12 @@ float sony_matte(vec2 packed_uv)
+         // With no border, packed mode keeps opaque A under masked B.
+         return outgoing?1.0:coverage;
+     }
+-    float d = sony_distance(p, sony_reverse ? 1.0-t : t, sony_output_aspect*grid.y/grid.x);
++    float d = (sony_code==273||sony_code==274)
++        ? sony_random_distance(p,sony_reverse?1.0-t:t)
++        : sony_distance(p, sony_reverse ? 1.0-t : t, sony_output_aspect*grid.y/grid.x);
+     if (sony_reverse) d = -d;
+-    bool mosaic=(sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=220&&sony_code<=223)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269);
+-    float cell_limit=sony_tile_size*.5;
++    bool mosaic=sony_code==273||sony_code==274||(sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=220&&sony_code<=223)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269);
++    float cell_limit=(sony_code==273||sony_code==274)?min(dust_size.x,dust_size.y)*.5:sony_tile_size*.5;
+     if(sony_code>=220&&sony_code<=223) {
+         vec2 extent=vec2(sony_output_aspect*grid.y/grid.x,1.0);
+         vec2 count=ceil(extent/vec2(sony_tile_size));
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 885415662ff8cd71c114c96b3cd70daaa329f04b..2157409059873c80aa93884ecb847639add77b7a 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.21.0
++0.22.0
+diff --git a/src/core/producer/wipe/sony_wipe_producer.cpp b/src/core/producer/wipe/sony_wipe_producer.cpp
+index a19345a8faf757ee5a8e7d2eeb46b6f34adc6b8a..8790f9a766d4cd8f473541fc1508c2a3217b2652 100644
+--- a/src/core/producer/wipe/sony_wipe_producer.cpp
++++ b/src/core/producer/wipe/sony_wipe_producer.cpp
+@@ -42,6 +42,7 @@ class sony_wipe_producer final : public frame_producer
+             else if(key==L"DUST_RATIO") next.dust_ratio=number(value,0,1);
+             else if(key==L"H_SIZE") next.dust_h_size=number(value,.001,1);
+             else if(key==L"V_SIZE") next.dust_v_size=number(value,.001,1);
++            else if(key==L"VOLATILITY" && next.code==273) next.dust_flash=number(value,0,100);
+             else if(key==L"FLASH_RATE") next.dust_flash=number(value,0,100);
+             else if (key == L"SOFT") next.soft = number(value,0,100);
+             else if(key==L"BORDER_SIDE"){double side=number(value,-1,1);if(side!=std::floor(side))CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"BORDER_SIDE must be -1, 0 or 1"));next.border_side=int(side);}
+@@ -90,6 +91,7 @@ class sony_wipe_producer final : public frame_producer
+         : white_(create_color_frame(this, deps.frame_factory, uint32_t(0xffffffff)))
+     {
+         wipe_.code = code;
++        if(code==273 || code==274)wipe_.dust_flash=75;
+         wipe_.output_aspect=double(deps.format_desc.square_width)/double(deps.format_desc.square_height);
+         update(params);
+     }
+@@ -259,17 +261,17 @@ spl::shared_ptr<frame_producer> create_sony_wipe_producer(
+     const frame_producer_dependencies& dependencies, const std::vector<std::wstring>& params)
+ {
+     if(!params.empty()&&boost::iequals(params[0],L"WIPE://DUSTMIX"))
+-        return spl::make_shared<sony_wipe_producer>(dependencies,274,std::vector<std::wstring>(params.begin()+1,params.end()));
++        return spl::make_shared<sony_wipe_producer>(dependencies,-1,std::vector<std::wstring>(params.begin()+1,params.end()));
+     if (params.empty() || !boost::istarts_with(params[0], L"WIPE://SONY/")) return frame_producer::empty();
+     const auto text = params[0].substr(12);
+     size_t end = 0;
+     const auto code = std::stoi(text, &end);
+     // TODO: Undecoded matrix paths 224-247,
+-    // random presets 270-272, dynamic random matrix 273 and diamond dust 274.
++    // random presets 270-272. 273/274 have independent native geometry.
+     // Their IDs are reserved; never substitute another mask for these patterns.
+-    if((code>=224&&code<=247)||(code>=270&&code<=274))
++    if((code>=224&&code<=247)||(code>=270&&code<=272))
+         CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Sony wipe pattern pending implementation"));
+-    if (end != text.size() || (!(code>=1 && code<=24) && code!=26 && code!=27 && code!=29 && code!=49 && !(code>=100&&code<=107) && !(code>=200&&code<=203) && !(code>=220&&code<=223) && !(code>=250&&code<=257) && !(code>=260&&code<=269) && !(code>=206&&code<=213) && code!=150 && code!=151 && code!=156 && code!=158 && code!=160 && code!=162 && code!=516 && code!=518 && code!=604 && code!=606 && code!=624 && code!=661 && !(code>=300&&code<=304)))
++    if (end != text.size() || (!(code>=1 && code<=24) && code!=26 && code!=27 && code!=29 && code!=49 && !(code>=100&&code<=107) && !(code>=200&&code<=203) && !(code>=220&&code<=223) && !(code>=250&&code<=257) && !(code>=260&&code<=269) && !(code>=206&&code<=213) && code!=150 && code!=151 && code!=156 && code!=158 && code!=160 && code!=162 && code!=516 && code!=518 && code!=604 && code!=606 && code!=624 && code!=661 && !(code>=300&&code<=304) && code!=273 && code!=274))
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unsupported Sony wipe pattern"));
+     return spl::make_shared<sony_wipe_producer>(dependencies, code,
+         std::vector<std::wstring>(params.begin()+1,params.end()));

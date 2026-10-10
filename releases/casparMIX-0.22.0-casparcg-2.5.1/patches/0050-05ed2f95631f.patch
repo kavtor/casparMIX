@@ -1,0 +1,24 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 9013772df7bde75178635d06561ae53173667d03..556cfe90ad12007e7ade0f25064a7ac96a8adac5 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -873,8 +873,17 @@ float sony_matte(vec2 packed_uv)
+     float d = sony_distance(p, sony_reverse ? 1.0-t : t, sony_output_aspect*grid.y/grid.x);
+     if (sony_reverse) d = -d;
+     bool mosaic=(sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=220&&sony_code<=223)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269);
+-    float soft=mosaic?min(sony_soft,sony_tile_size*.5):sony_soft;
+-    float border=mosaic?min(sony_border,sony_tile_size*.5):sony_border;
++    float cell_limit=sony_tile_size*.5;
++    if(sony_code>=220&&sony_code<=223) {
++        vec2 extent=vec2(sony_output_aspect*grid.y/grid.x,1.0);
++        vec2 count=ceil(extent/vec2(sony_tile_size));
++        if(sony_code>=222)count.x=float(sony_karaoke_rows);
++        else count.y=float(sony_karaoke_rows);
++        vec2 size=extent/count;
++        cell_limit=min(size.x,size.y)*.5;
++    }
++    float soft=mosaic?min(sony_soft,cell_limit):sony_soft;
++    float border=mosaic?min(sony_border,cell_limit):sony_border;
+     if (sony_role == 1 && border <= 0.0) return sony_coverage(d, soft);
+     float inner_width=sony_border_side==1?0.0:sony_border_side==-1?2.0*border:border;
+     float outer_width=sony_border_side==-1?0.0:sony_border_side==1?2.0*border:border;

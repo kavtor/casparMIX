@@ -1,0 +1,170 @@
+diff --git a/src/accelerator/ogl/image/image_kernel.cpp b/src/accelerator/ogl/image/image_kernel.cpp
+index d5d6af67deba2c46e18a0d37eea714fc887d5aaa..a5636e52059c73dcfeb6c4775d42832e55811e6c 100644
+--- a/src/accelerator/ogl/image/image_kernel.cpp
++++ b/src/accelerator/ogl/image/image_kernel.cpp
+@@ -276,6 +276,7 @@ struct image_kernel::impl
+ 
+         // Setup image-adjustments
+         shader_->set("invert", transforms.image_transform.invert);
++        shader_->set("native_mix", params.blend_mode==core::blend_mode::nam?1:params.blend_mode==core::blend_mode::super_mix?2:0);
+ 
+         if (transforms.image_transform.levels.min_input > epsilon ||
+             transforms.image_transform.levels.max_input < 1.0 - epsilon ||
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index a0771973f9a32653e72dfca3d81a8f39b3121b92..9501707e85ce0cef0bd2667b583c15b2cb229945 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -422,9 +422,15 @@ vec3 get_blend_color(vec3 back, vec3 fore)
+     return BlendNormal(back, fore);
+ }
+ 
++uniform int native_mix;
+ vec4 blend(vec4 fore)
+ {
+     vec4 back = texture(background, TexCoord2.st).bgra;
++    // Operate on complete premultiplied video signals, not component-wise MAX.
++    // Both inputs reach their selected peak at mid-transition; audio retains
++    // the ordinary crossfade in the producer. These are background operations.
++    if(native_mix==1){vec3 y=vec3(.0722,.7152,.2126);return vec4(dot(fore.rgb,y)>dot(back.rgb,y)?fore.rgb:back.rgb,1.0);}
++    if(native_mix==2)return vec4(clamp(back.rgb+fore.rgb,vec3(0),vec3(1)),1.0);
+     if(blend_mode != 0)
+         fore.rgb = get_blend_color(back.rgb/(back.a+0.0000001), fore.rgb/(fore.a+0.0000001))*fore.a;
+     switch(keyer)
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 571215736a666e8d79d7a7958b5ffc400514fb53..d9df1bbc0c7befdbc28d61efc28ed3e5c08d015f 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.10.1
++0.11.0
+diff --git a/src/core/mixer/image/blend_modes.cpp b/src/core/mixer/image/blend_modes.cpp
+index d21634cc14f9bdb72f457c7d12622932ba4d4ed2..a6d04b9baf367dbfa8241ddc813a1d13fcf49a9e 100644
+--- a/src/core/mixer/image/blend_modes.cpp
++++ b/src/core/mixer/image/blend_modes.cpp
+@@ -33,6 +33,8 @@ blend_mode get_blend_mode(const std::wstring& str)
+         return blend_mode::normal;
+     if (boost::iequals(str, L"lighten"))
+         return blend_mode::lighten;
++    if (boost::iequals(str,L"nam"))return blend_mode::nam;
++    if (boost::iequals(str,L"super_mix"))return blend_mode::super_mix;
+     if (boost::iequals(str, L"darken"))
+         return blend_mode::darken;
+     if (boost::iequals(str, L"multiply"))
+@@ -152,6 +154,8 @@ std::wstring get_blend_mode(blend_mode mode)
+             return L"color";
+         case blend_mode::luminosity:
+             return L"luminosity";
++        case blend_mode::nam:return L"nam";
++        case blend_mode::super_mix:return L"super_mix";
+         default:
+             return L"normal";
+     }
+diff --git a/src/core/mixer/image/blend_modes.h b/src/core/mixer/image/blend_modes.h
+index d78170f8c56ce81afb2e4fea674ccbcbe829b868..d3b931d8631bc0e0d3db00856fac175dd740c0c6 100644
+--- a/src/core/mixer/image/blend_modes.h
++++ b/src/core/mixer/image/blend_modes.h
+@@ -57,6 +57,8 @@ enum class blend_mode
+     color,
+     luminosity,
+     mix,
++    nam,
++    super_mix,
+     blend_mode_count
+ };
+ 
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+index ea7aa5c041df52ca2a159cc8fbfc4a0fe5222483..44f4b4233fad3f99c4060274a6e0c9ee8afafe25 100644
+--- a/src/core/producer/wipe/dme_producer.cpp
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -214,6 +214,7 @@ class dme_transition final : public frame_producer
+     int                             duration_, current_ = 0;
+     bool                            manual_, reverse_, ready_ = false;
+     double                          progress_ = 0;
++    double gain_a_=1,gain_b_=1;
+     std::mutex                      mutex_;
+ 
+     draw_frame last_;
+@@ -226,13 +227,16 @@ class dme_transition final : public frame_producer
+                    bool                                   manual,
+                    bool                                   reverse,
+                    const std::wstring&                    manifest,
+-                   const std::wstring&                    backdrop)
++                   const std::wstring&                    backdrop,
++                   double gain_a=1,double gain_b=1)
+         : deps_(deps)
+         , destination_(dst)
+         , effect_(effect)
+         , duration_(duration)
+         , manual_(manual)
+         , reverse_(reverse)
++        , gain_a_(gain_a)
++        , gain_b_(gain_b)
+     {
+         if(effect_.find(L"SONY_")==0)sony_code_=std::stoi(effect_.substr(5));
+         if (!backdrop.empty())
+@@ -336,7 +340,19 @@ class dme_transition final : public frame_producer
+                 in  = draw_frame::push(in);
+                 out.transform().audio_transform.volume *= 1 - progress_;
+                 in.transform().audio_transform.volume *= progress_;
+-                if(sony_code_){result=sony_primitive_frame(sony_code_,out,in,progress_,reverse_,double(deps_.format_desc.square_width)/deps_.format_desc.square_height);}
++                if(effect_==L"NAM"||effect_==L"SUPER_MIX"){
++                    const double a=effect_==L"NAM"?1:gain_a_,b=effect_==L"NAM"?1:gain_b_;
++                    out.transform().image_transform.opacity*=progress_<=.5?1+(a-1)*2*progress_:a*2*(1-progress_);
++                    in.transform().image_transform.opacity*=progress_<=.5?b*2*progress_:b+(1-b)*2*(progress_-.5);
++                    // Blend modes belong to sibling rendered layers. Without
++                    // explicit depths, the stage groups both items into one
++                    // normal layer and cannot compare their complete signals.
++                    ++out.transform().image_transform.layer_depth;
++                    ++in.transform().image_transform.layer_depth;
++                    in.transform().image_transform.blend_mode=effect_==L"NAM"?blend_mode::nam:blend_mode::super_mix;
++                    result=draw_frame::over(out,in);
++                }
++                else if(sony_code_){result=sony_primitive_frame(sony_code_,out,in,progress_,reverse_,double(deps_.format_desc.square_width)/deps_.format_desc.square_height);}
+                 else if (effect_ == L"PAGE_CURL" || effect_ == L"PAGE_ROLL") {
+                     auto& surface    = (effect_ == L"PAGE_ROLL" ? in : out).transform().image_transform.surface;
+                     surface.mode     = effect_ == L"PAGE_CURL" ? 1 : 2;
+@@ -404,6 +420,12 @@ class dme_transition final : public frame_producer
+             pending_background_ = producer;
+             return make_ready_future(std::wstring(L"OK"));
+         }
++        if(tokens.size()==4&&boost::to_upper_copy(tokens[0])==L"A_GAIN"&&boost::to_upper_copy(tokens[2])==L"B_GAIN"){
++            size_t usedA=0,usedB=0;
++            const double a=bounded(std::stod(tokens[1],&usedA),0,1),b=bounded(std::stod(tokens[3],&usedB),0,1);
++            if(usedA!=tokens[1].size()||usedB!=tokens[3].size())CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Invalid mix gain"));
++            std::lock_guard<std::mutex> lock(mutex_);gain_a_=a;gain_b_=b;return make_ready_future(std::wstring(L"OK"));
++        }
+         if (tokens.size() != 2 || boost::to_upper_copy(tokens[0]) != L"PROGRESS")
+             CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"DME CALL requires PROGRESS value"));
+         size_t consumed = 0;
+@@ -436,18 +458,20 @@ spl::shared_ptr<frame_producer> create_dme_transition(const frame_producer_depen
+             auto effect = boost::to_upper_copy(params[i + 2]);
+             bool sony=false;
+             if(effect.find(L"SONY_")==0){size_t end=0;auto code=std::stoi(effect.substr(5),&end);sony=end==effect.size()-5&&sony_primitive(code);if(!sony&&sony_dme::reserved(code))CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Sony DME preset pending implementation"));}
+-            if (!sony && effect != L"MOVE" && effect != L"CUBE" && effect != L"ZOOM" && effect != L"PAGE_CURL" &&
++            if (!sony && effect != L"NAM" && effect != L"SUPER_MIX" && effect != L"MOVE" && effect != L"CUBE" && effect != L"ZOOM" && effect != L"PAGE_CURL" &&
+                 effect != L"PAGE_ROLL" && effect != L"PUSH_LEFT" && effect != L"PUSH_RIGHT" && effect != L"PUSH_TOP" &&
+                 effect != L"PUSH_BOTTOM" && effect != L"SLIDE_LEFT" && effect != L"SLIDE_RIGHT" &&
+                 effect != L"SLIDE_TOP" && effect != L"SLIDE_BOTTOM")
+                 CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unknown native DME effect"));
+             bool         manual = false, reverse = false;
++            double gain_a=1,gain_b=1;
+             std::wstring manifest, backdrop;
+             for (size_t j = i + 3; j < params.size(); j += 2) {
+                 if (j + 1 >= params.size())
+                     CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Missing DME option"));
+                 auto option = boost::to_upper_copy(params[j]);
+-                if (option == L"MANUAL") {
++                if(option==L"A_GAIN"||option==L"B_GAIN"){size_t end=0;double value=std::stod(params[j+1],&end);if(end!=params[j+1].size())CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Invalid mix gain"));bounded(value,0,1);(option==L"A_GAIN"?gain_a:gain_b)=value;}
++                else if (option == L"MANUAL") {
+                     if (params[j + 1] != L"0" && params[j + 1] != L"1")
+                         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid DME manual flag"));
+                     manual = params[j + 1] == L"1";
+@@ -462,7 +486,7 @@ spl::shared_ptr<frame_producer> create_dme_transition(const frame_producer_depen
+                 else
+                     CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unknown DME option"));
+             }
+-            return spl::make_shared<dme_transition>(deps, dst, effect, duration, manual, reverse, manifest, backdrop);
++            return spl::make_shared<dme_transition>(deps, dst, effect, duration, manual, reverse, manifest, backdrop,gain_a,gain_b);
+         }
+     return frame_producer::empty();
+ }

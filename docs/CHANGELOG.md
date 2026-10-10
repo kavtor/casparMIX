@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.22.0 — CasparCG 2.5.1 stable
+
+* Add Sony 273 random mosaic and 274 Diamond Dust. Progress-stable cell seeds preserve held frames and retrace on rewind; no per-frame mask upload or wall-clock flashing.
+* H_SIZE/V_SIZE define physical tile/particle dimensions. VOLATILITY (273) controls generation rate; FLASH_RATE (274) spreads particle start times. These are project time laws based on the documented controls, pending operator morphology review.
+* Separate Dust Mix behind an internal sentinel without changing its existing formula or public syntax. Catalogue: 89 native wipes, 27 reserved; DME remains 80/189. No new dependencies.
+
+
 ## 0.21.0 — CasparCG 2.5.1 stable
 
 * Add Sony-numbered Karaoke 220–223 row/tile progress with START, ROWNO and PHASE. The manual documents these controls; four-axis default orientation is a project interpretation because the pictograms do not identify direction.
