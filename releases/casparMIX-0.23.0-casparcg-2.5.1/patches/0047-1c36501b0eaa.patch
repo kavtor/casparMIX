@@ -1,0 +1,67 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 41915c799477856bc769e838128f06905e641650..61e6e92d91491dfdbf7cd2b4059a84554a9bf618 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.19.1
++0.19.2
+diff --git a/src/modules/image/producer/graphics_producer.cpp b/src/modules/image/producer/graphics_producer.cpp
+index 318ff281225809f48f44c74837c4cf759a718e22..77a40707faf379235205ab5c7e0a948dc097903b 100644
+--- a/src/modules/image/producer/graphics_producer.cpp
++++ b/src/modules/image/producer/graphics_producer.cpp
+@@ -34,6 +34,8 @@ struct resource
+ {
+     core::draw_frame                            frame;
+     int                                         width, height;
++    // Visible glyph bounds are distinct from the padded font texture.
++    int                                         ink_top = 0, ink_height = 0;
+     std::shared_ptr<std::vector<unsigned char>> pixels;
+ };
+ class graphics_producer final : public core::frame_producer
+@@ -58,7 +60,7 @@ class graphics_producer final : public core::frame_producer
+         desc.planes.emplace_back(width, height, 4);
+         auto f = deps_.frame_factory->create_frame(this, desc);
+         std::memcpy(f.image_data(0).begin(), pixels.data(), pixels.size());
+-        return {core::draw_frame(std::move(f)), width, height, std::make_shared<std::vector<unsigned char>>(pixels)};
++        return {core::draw_frame(std::move(f)), width, height, 0, 0, std::make_shared<std::vector<unsigned char>>(pixels)};
+     }
+     std::array<unsigned char, 4> color(const std::string& text)
+     {
+@@ -186,6 +188,12 @@ class graphics_producer final : public core::frame_producer
+                 break;
+         }
+         auto r = bitmap(w, h, pixels);
++        int top = h, bottom = -1;
++        for (int y = 0; y < h; ++y)
++            for (int x = 0; x < w; ++x)
++                if (pixels[(size_t(y)*w+x)*4+3]) { top = std::min(top,y); bottom = std::max(bottom,y); }
++        r.ink_top = bottom >= top ? top : 0;
++        r.ink_height = bottom >= top ? bottom-top+1 : 0;
+         cache_bytes_ += pixels.size();
+         cache_.emplace(key, r);
+         return r;
+@@ -366,6 +374,9 @@ class graphics_producer final : public core::frame_producer
+             auto font = n.get<std::string>("font", "sans");
+             if (font != "sans" && font != "mono")
+                 throw std::invalid_argument("Invalid GRAPHICS font alias");
++            auto valign = n.get<std::string>("valign", "top");
++            if (valign != "top" && valign != "center")
++                throw std::invalid_argument("Invalid GRAPHICS vertical alignment");
+             n.get<bool>("bold", false);
+             int pad = n.get<int>("padding", 6);
+             if (pad < 0 || pad > 64)
+@@ -454,10 +465,13 @@ class graphics_producer final : public core::frame_producer
+                         x += (w - r.width) / 2;
+                     if (align == "right")
+                         x += w - r.width;
++                    const int box_y = y;
++                    const bool centered = n.get<std::string>("valign", "top") == "center";
++                    if (centered) y += (h-r.ink_height)/2-r.ink_top;
+                     auto background = n.get<std::string>("background", "");
+                     if (!background.empty()) {
+                         int pad = n.get<int>("padding", 6);
+-                        composite(pixels, solid(background), x - pad, y - 3, r.width + pad * 2, r.height + 6);
++                        composite(pixels, solid(background), x - pad, (centered ? box_y : y) - 3, r.width + pad * 2, (centered ? h : r.height) + 6);
+                     }
+                     composite(pixels, r, x, y, r.width, r.height);
+                 } else if(n.get<std::string>("type")=="triangle")

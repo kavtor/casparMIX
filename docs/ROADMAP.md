@@ -1,6 +1,6 @@
 # Open engine work — casparMIX
 
-Reviewed against 0.17.0 on 2026-10-07. kavtor owns mixer semantics, configuration
+Reviewed against 0.23.0 on 2026-10-10. kavtor owns mixer semantics, configuration
 and operator UI; casparMIX owns reusable producers, composition and timing.
 
 ## Current
@@ -8,9 +8,10 @@ and operator UI; casparMIX owns reusable producers, composition and timing.
 - Remaining key composition primitives for separate fill/key, pattern keys and
   DVE key processing. Native LUMA, alpha inversion and rectangular mask/inversion
   are implemented; preserve shared-input isolation and upstream commands.
-- Complete the individually reviewed Sony DME catalogue and unresolved wipes.
-  Current native catalogues: 72 DME and 83 wipes. Unknown presets remain explicit
-  pending errors, not aliases. Inferred motion requires operator review.
+- Complete the individually reviewed Sony DME catalogue (80 implemented, 189
+  pending). All 116 reference WIPE codes execute; review provisional 224–247 and
+  270–272 with the operator and correct morphology as required. Unknown IDs
+  remain invalid. Inferred motion is not operator-approved until reviewed.
 - Page/roll backside materials and optional projected shadows, with independent
   live preview preparation and no HTML/video readback path.
 - Stinger/track-matte readiness, synchronized fill/matte sampling and frame cut
