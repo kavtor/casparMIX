@@ -1,0 +1,13 @@
+diff --git a/src/accelerator/ogl/image/image_kernel.cpp b/src/accelerator/ogl/image/image_kernel.cpp
+index 16d1c4f41ab37a26d24c4f6a39b6659fff60389e..f0f8b80d55816010d7c18557aca9601740444191 100644
+--- a/src/accelerator/ogl/image/image_kernel.cpp
++++ b/src/accelerator/ogl/image/image_kernel.cpp
+@@ -193,7 +193,7 @@ struct image_kernel::impl
+         const auto color_space = is_hd ? params.pix_desc.color_space : core::color_space::bt601;
+ 
+         const float color_matrices[3][9] = {
+-            {1.0, 0.0, 1.402, 1.0, -0.344, -0.509, 1.0, 1.772, 0.0},                          // bt.601
++            {1.0, 0.0, 1.402, 1.0, -0.344136, -0.714136, 1.0, 1.772, 0.0},                          // bt.601
+             {1.0, 0.0, 1.5748, 1.0, -0.1873, -0.4681, 1.0, 1.8556, 0.0},                      // bt.709
+             {1.0, 0.0, 1.4746, 1.0, -0.16455312684366, -0.57135312684366, 1.0, 1.8814, 0.0}}; // bt.2020
+         const auto color_matrix = color_matrices[static_cast<int>(color_space)];

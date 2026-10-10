@@ -470,5 +470,33 @@ CALL 3-1 "PROGRESS .5"
 PLAY 3-1 route://2 RENDERED WIPESONY 25 SONY 274 MANUAL 1 H_SIZE .02 V_SIZE .02 FLASH_RATE 75
 ```
 
-89 wipes execute; 27 remain reserved (224–247 and 270–272). The three old
-random presets still require identified morphology; they are not aliases.
+As of 0.22.0, 89 wipes executed and 27 were reserved. Version 0.23.0
+adds those 224–247 and 270–272 with explicit provisional morphology.
+
+## Complete provisional WIPE inventory (casparMIX 0.23.0)
+
+All 116 reference WIPE identifiers are executable, including 224–247 and
+270–272. The operator authorized implementation by interpretation and later
+correction. None of this batch is marked operator-verified.
+
+* 224–227: horizontally paired, mirrored serpents, from the middle outward
+  (224/225) or the outer edges inward (226/227), with opposed winding variants.
+* 228–231: corresponding vertically paired serpents.
+* 232–235: inward twin spirals, horizontal/vertical and winding variants.
+* 236–239: outward counterparts of those twin spirals.
+* 240–243: parallel horizontal bands, with forward/reverse travel and lane order.
+* 244–247: parallel vertical counterparts.
+* 270: fine pixel grain; 271: coarser grain; 272: clustered multiscale grain.
+  Fixed spatial thresholds make these reproducible with manual progress.
+
+These are explicit provisional interpretations of the pictograms, not claims
+that Sony's undisclosed path tables or timing laws have been reproduced exactly.
+Square mosaic cells use TILESIZE; native contour modifiers remain supported.
+Discrete grain avoids geometric derivative antialiasing, which would otherwise
+turn noise into an unintended dissolve. SOFT still applies when requested.
+The complete code-by-code interpretation is tracked in kavtor's
+`docs/sony-wipe-interpretations.json`. Existing approved morphology is unchanged.
+
+WIPE DIRECT now covers the entire reference inventory. No pending WIPE codes
+remain with this engine version. DME is a separate catalogue and its unimplemented
+identifiers remain reserved. Unknown codes still reject execution.

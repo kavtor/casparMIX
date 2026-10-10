@@ -1,0 +1,132 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 133650b681c199158269e92e3e61820c4ef8461b..4cdabbeac8828634476918a537aee981503b1213 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -626,6 +626,43 @@ float sony_spiral_rank(vec2 c,vec2 n) {
+         float delay=(sony_karaoke_phase+100.0)/200.0;
+         return (lane*delay+(cell+1.0)/length)/(1.0+delay*(lanes-1.0))*total-1e-4;
+     }
++    // Provisional 224-247 traversal interpretations from the original
++    // pictograms. These are real ordered paths, awaiting operator correction.
++    if(sony_code>=224&&sony_code<=231) {
++        int variant=(sony_code-224)%4;
++        bool vertical=sony_code>=228;
++        if(vertical){c=c.yx;n=n.yx;}
++        bool lower=c.y>=ceil(n.y*.5);
++        float lanes=ceil(n.y*.5);
++        float lane=lower?n.y-1.0-c.y:c.y;
++        // First pair grows from the middle; second pair from outer edges.
++        if(variant<2)lane=lanes-1.0-lane;
++        bool backwards=(variant%2)==1;
++        if(lower)backwards=!backwards;
++        float cell=(backwards!=(mod(lane,2.0)>0.0))?n.x-1.0-c.x:c.x;
++        return (lane*n.x+cell)/(lanes*n.x)*total;
++    }
++    if(sony_code>=232&&sony_code<=239) {
++        int variant=(sony_code-232)%4;
++        // Two mirrored spirals share the long seam, rather than aliasing the
++        // existing corner spirals. Alternate axis and winding direction.
++        if(variant>=2){c=c.yx;n=n.yx;}
++        c.y=min(c.y,n.y-1.0-c.y);n.y=ceil(n.y*.5);
++        if((variant%2)==1){c=c.yx;n=n.yx;}
++        float rank=sony_spiral_rank(c,n);
++        if(sony_code>=236)rank=n.x*n.y-1.0-rank;
++        return rank/(n.x*n.y)*total;
++    }
++    if(sony_code>=240&&sony_code<=247) {
++        int variant=(sony_code-240)%4;
++        if(sony_code>=244){c=c.yx;n=n.yx;}
++        if(variant==1||variant==2)c.x=n.x-1.0-c.x;
++        if(variant>=2)c.y=n.y-1.0-c.y;
++        float across=c.x/max(n.x-1.0,1.0),lane=c.y/max(n.y-1.0,1.0);
++        // Pictograms show parallel bands: a small lane phase avoids making
++        // these another serial snake or plain full-frame bar wipe.
++        return (.7*across+.3*lane)*max(total-1.0,0.0);
++    }
+     if(sony_code>=250&&sony_code<=257){
+         bool vertical=sony_code<=253;int variant=vertical?sony_code-250:sony_code-254;
+         float dimension=vertical?n.x:n.y,original=vertical?c.x:c.y;
+@@ -718,7 +755,7 @@ float sony_distance(vec2 p, float t, float cell_aspect)
+     vec2 q=p-sony_center,extent=max(sony_center,vec2(1)-sony_center);
+     float ar=max(sony_aspect,.01),raster=max(cell_aspect,.01),sx=ar*raster;
+     vec2 physical=vec2(q.x*raster,q.y),normal=vec2(q.x/ar,q.y),bounds=vec2(extent.x/ar,extent.y);
+-    if((sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=220&&sony_code<=223)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269))return sony_mosaic(p,t,raster);
++    if((sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=220&&sony_code<=247)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269))return sony_mosaic(p,t,raster);
+     if(sony_code==1)return (t-p.x)*raster;
+     if(sony_code==2)return (t-(1-p.x))*raster;
+     if(sony_code==3)return t-p.y;
+@@ -820,7 +857,10 @@ float sony_distance(vec2 p, float t, float cell_aspect)
+ float sony_coverage(float distance, float softness)
+ {
+     // One pixel of geometric antialiasing also applies to a hard edge.
+-    float width = max(softness, max(0.5*fwidth(distance), 0.0000001));
++    // Discrete noise cells are not geometric edges: spatial derivatives
++    // would turn their entire grain into an unintended dissolve.
++    float aa=(sony_code>=270&&sony_code<=272)?0.0000001:max(0.5*fwidth(distance),0.0000001);
++    float width = max(softness, aa);
+     return smoothstep(-width, width, distance);
+ }
+ 
+@@ -830,6 +870,20 @@ uniform vec2 dust_size;
+ float dust_hash(vec2 cell,float phase) {
+     return fract(sin(dot(cell,vec2(127.1,311.7))+phase*74.7)*43758.5453);
+ }
++// Provisional random presets: pixel grain, coarse grain, and clustered
++// multiscale grain. Spatial thresholds are fixed for the entire transition.
++float sony_noise(vec2 p) {
++    float pixels=sony_code==270?720.0:sony_code==271?360.0:180.0;
++    vec2 cell=floor(vec2(p.x*sony_output_aspect,p.y)*pixels);
++    float fine=dust_hash(cell,float(sony_code-269));
++    if(sony_code!=272)return fine;
++    float coarse=dust_hash(floor(cell/4.0),13.0);
++    return .65*coarse+.35*fine;
++}
++float sony_noise_distance(vec2 p,float progress) {
++    return (progress-sony_noise(p))*.04;
++}
++
+ float dust_coverage(vec2 p,float progress) {
+     vec2 physical=vec2(p.x*sony_output_aspect,p.y);
+     vec2 uv=physical/max(dust_size,vec2(.001));
+@@ -892,11 +946,13 @@ float sony_matte(vec2 packed_uv)
+         // With no border, packed mode keeps opaque A under masked B.
+         return outgoing?1.0:coverage;
+     }
+-    float d = (sony_code==273||sony_code==274)
++    float d = (sony_code>=270&&sony_code<=272)
++        ? sony_noise_distance(p,sony_reverse?1.0-t:t)
++        : (sony_code==273||sony_code==274)
+         ? sony_random_distance(p,sony_reverse?1.0-t:t)
+         : sony_distance(p, sony_reverse ? 1.0-t : t, sony_output_aspect*grid.y/grid.x);
+     if (sony_reverse) d = -d;
+-    bool mosaic=sony_code==273||sony_code==274||(sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=220&&sony_code<=223)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269);
++    bool mosaic=sony_code==273||sony_code==274||(sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=220&&sony_code<=247)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269);
+     float cell_limit=(sony_code==273||sony_code==274)?min(dust_size.x,dust_size.y)*.5:sony_tile_size*.5;
+     if(sony_code>=220&&sony_code<=223) {
+         vec2 extent=vec2(sony_output_aspect*grid.y/grid.x,1.0);
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 2157409059873c80aa93884ecb847639add77b7a..ca222b7cf394c7e48e13308f41fb4c49478f6e12 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.22.0
++0.23.0
+diff --git a/src/core/producer/wipe/sony_wipe_producer.cpp b/src/core/producer/wipe/sony_wipe_producer.cpp
+index 8790f9a766d4cd8f473541fc1508c2a3217b2652..fa2cbe9910f378b154420bbafc1e4fc7e58459be 100644
+--- a/src/core/producer/wipe/sony_wipe_producer.cpp
++++ b/src/core/producer/wipe/sony_wipe_producer.cpp
+@@ -266,12 +266,8 @@ spl::shared_ptr<frame_producer> create_sony_wipe_producer(
+     const auto text = params[0].substr(12);
+     size_t end = 0;
+     const auto code = std::stoi(text, &end);
+-    // TODO: Undecoded matrix paths 224-247,
+-    // random presets 270-272. 273/274 have independent native geometry.
+-    // Their IDs are reserved; never substitute another mask for these patterns.
+-    if((code>=224&&code<=247)||(code>=270&&code<=272))
+-        CASPAR_THROW_EXCEPTION(user_error()<<msg_info(L"Sony wipe pattern pending implementation"));
+-    if (end != text.size() || (!(code>=1 && code<=24) && code!=26 && code!=27 && code!=29 && code!=49 && !(code>=100&&code<=107) && !(code>=200&&code<=203) && !(code>=220&&code<=223) && !(code>=250&&code<=257) && !(code>=260&&code<=269) && !(code>=206&&code<=213) && code!=150 && code!=151 && code!=156 && code!=158 && code!=160 && code!=162 && code!=516 && code!=518 && code!=604 && code!=606 && code!=624 && code!=661 && !(code>=300&&code<=304) && code!=273 && code!=274))
++    // Complete WIPE inventory; 224-247 and 270-272 use documented provisional interpretations.
++    if (end != text.size() || (!(code>=1 && code<=24) && code!=26 && code!=27 && code!=29 && code!=49 && !(code>=100&&code<=107) && !(code>=200&&code<=203) && !(code>=220&&code<=247) && !(code>=250&&code<=257) && !(code>=260&&code<=269) && !(code>=206&&code<=213) && code!=150 && code!=151 && code!=156 && code!=158 && code!=160 && code!=162 && code!=516 && code!=518 && code!=604 && code!=606 && code!=624 && code!=661 && !(code>=300&&code<=304) && !(code>=270&&code<=274)))
+         CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unsupported Sony wipe pattern"));
+     return spl::make_shared<sony_wipe_producer>(dependencies, code,
+         std::vector<std::wstring>(params.begin()+1,params.end()));

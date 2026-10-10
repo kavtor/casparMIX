@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.0 — CasparCG 2.5.1 stable
+
+* Implement the remaining 27 WIPE identifiers: 224–247 paired serpents, twin spirals and parallel band sweeps; 270–272 fine, coarse and clustered grain. Explicit provisional interpretations await operator review.
+* Hold/rewind/REV are deterministic; native SOFT/BORDER share the mosaic union frontier. Avoid derivative smoothing that turns discrete grain into dissolve.
+* All 116 reference wipes execute; no reserved WIPE IDs remain. DME stays at 80 implemented / 189 pending. No new dependencies.
+
 ## 0.22.0 — CasparCG 2.5.1 stable
 
 * Add Sony 273 random mosaic and 274 Diamond Dust. Progress-stable cell seeds preserve held frames and retrace on rewind; no per-frame mask upload or wall-clock flashing.

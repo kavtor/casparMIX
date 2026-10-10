@@ -1,0 +1,77 @@
+diff --git a/src/core/producer/route/route_producer.cpp b/src/core/producer/route/route_producer.cpp
+index efcacd998dd675464aee553caa689f38f00859ee..f9896fec78105583049208e738e24b1c8a1b3dbb 100644
+--- a/src/core/producer/route/route_producer.cpp
++++ b/src/core/producer/route/route_producer.cpp
+@@ -37,6 +37,7 @@
+ 
+ #include <tbb/concurrent_queue.h>
+ 
++#include <atomic>
+ #include <optional>
+ #include <stack>
+ #include <unordered_map>
+@@ -49,6 +50,7 @@ class fix_stream_tag : public frame_visitor
+     const void*                                                route_producer_ptr_;
+     std::stack<std::pair<frame_transform, std::vector<draw_frame>>> frames_stack_;
+     std::optional<const_frame>                                 upd_frame_;
++    bool has_frame_ = false;
+     
+     fix_stream_tag(const fix_stream_tag&);
+     fix_stream_tag& operator=(const fix_stream_tag&);
+@@ -66,6 +68,7 @@ class fix_stream_tag : public frame_visitor
+     }
+ 
+     void visit(const const_frame& frame) {
++        has_frame_ = true;
+         // Get original tag from the frame
+         const void* source_tag = frame.stream_tag();
+         
+@@ -97,7 +100,10 @@ class fix_stream_tag : public frame_visitor
+         }
+     }
+ 
++    bool has_frame() const { return has_frame_; }
++
+     draw_frame operator()(draw_frame frame) {
++        has_frame_ = false;
+         frame.accept(*this);
+ 
+         auto popped = frames_stack_.top();
+@@ -131,6 +137,7 @@ class route_producer
+     fix_stream_tag                                               tag_fix_;
+     core::video_format_desc                                      source_format_;
+     bool                                                         is_cross_channel_ = false;
++    std::atomic<bool>                                            ready_{false};
+ 
+     boost::signals2::scoped_connection connection_;
+ 
+@@ -186,6 +193,11 @@ class route_producer
+                     // Update the tag in the frame to allow the audio mixer to distinguish between the source frame and the routed frame
+                     frame1b = self->tag_fix_(frame1b);
+ 
++                    // Empty frame trees are emitted while an upstream producer
++                    // loads. They must not retire a transition's old picture.
++                    if (!self->ready_.load(std::memory_order_acquire) && !self->tag_fix_.has_frame())
++                        return;
++
+                     auto frame2b = frame2;
+                     if (!frame2b) {
+                         // Ensure that any interlaced channel will repeat frames instead of showing black.
+@@ -197,6 +209,8 @@ class route_producer
+ 
+                     if (!self->buffer_.try_push(std::make_pair(frame1b, frame2b))) {
+                         self->graph_->set_tag(diagnostics::tag_severity::WARNING, "dropped-frame");
++                    } else {
++                        self->ready_.store(true, std::memory_order_release);
+                     }
+                     self->graph_->set_value("produce-time",
+                                             self->produce_timer_.elapsed() * self->route_->format_desc.fps * 0.5);
+@@ -258,7 +272,7 @@ class route_producer
+         }
+     }
+ 
+-    bool is_ready() override { return true; }
++    bool is_ready() override { return ready_.load(std::memory_order_acquire); }
+ 
+     std::wstring print() const override { return L"route[" + route_->name + L"]"; }
+ 
