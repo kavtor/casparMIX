@@ -1,0 +1,27 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 70d8f28c92d5714372f96fdac3df9ad0d57edd71..fb2633a2efb5616806290a25cd300e7b7e10691c 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -856,7 +856,7 @@ float sony_matte(vec2 packed_uv)
+     bool mosaic=(sony_code>=200&&sony_code<=203)||(sony_code>=206&&sony_code<=213)||(sony_code>=250&&sony_code<=257)||(sony_code>=260&&sony_code<=269);
+     float soft=mosaic?min(sony_soft,sony_tile_size*.5):sony_soft;
+     float border=mosaic?min(sony_border,sony_tile_size*.5):sony_border;
+-    if (sony_role == 1) return sony_coverage(d, soft);
++    if (sony_role == 1 && border <= 0.0) return sony_coverage(d, soft);
+     float inner_width=sony_border_side==1?0.0:sony_border_side==-1?2.0*border:border;
+     float outer_width=sony_border_side==-1?0.0:sony_border_side==1?2.0*border:border;
+     float inner_soft=sony_inner_soft<0.0?soft:sony_inner_soft;
+@@ -864,7 +864,12 @@ float sony_matte(vec2 packed_uv)
+     float inner = sony_coverage(d-inner_width, inner_soft);
+     // Different softness can cross; preserve an ordered partition of A/color/B.
+     float outer = max(inner,sony_coverage(d+outer_width, outer_soft));
+-    if (sony_role == 2) return clamp(outer-inner, 0.0, 1.0);
++    float band = clamp(outer-inner, 0.0, 1.0);
++    if (sony_role == 2) return band;
++    // The color band is composited over the video pair. Normalize B by the
++    // residual alpha so the final weights are exactly A=1-outer, color=band,
++    // B=inner. A plain contour matte leaks video beneath the softened band.
++    if (sony_role == 1) return band >= 1.0 ? 0.0 : clamp(inner/(1.0-band),0.0,1.0);
+     return outgoing ? (inner >= 1.0 ? 0.0 : clamp((1.0-outer)/(1.0-inner),0.0,1.0)) : inner;
+ }
+ 

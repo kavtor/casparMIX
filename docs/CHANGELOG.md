@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.2 — CasparCG 2.5.1 stable
+
+* Correct drawn asymmetric wipe borders: normalize the video blend below the color band so final A/color/B weights match the same distance field. The former whole-frame matte leaked video through the softened band (issue #23).
+* Add opt-in GRAPHICS `valign: center` based on visible glyph ink, preserving default top placement. Centering captures cover uppercase, mixed-case and descenders (issue #25).
+* Native border regressions check RGB weights, side placement, endpoints and exact PGM/MV identity. Operator trail appearance remains subject to acceptance. No new dependencies.
+
 ## 0.19.1 — CasparCG 2.5.1 stable
 
 * Fix Dust Mix's incoming matte: a full-width role-1 texture must not invert its

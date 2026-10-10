@@ -1,0 +1,71 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index faef31a4357c48d6e4c55e84c8be8e3bc9055e20..39e898a4f952d339c155a7939d571a5fdd6c8cfc 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.7.0
++0.7.1
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+index 1adc814c2b53a955eed9304a6b3768c9c7924173..5b6377c5e783eaf667e2b5b5a79470fa3f75dd87 100644
+--- a/src/core/producer/wipe/dme_producer.cpp
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -9,6 +9,7 @@
+ #include <core/frame/frame_transform.h>
+ #include <core/producer/frame_producer_registry.h>
+ #include <mutex>
++#include <iomanip>
+ #include <sstream>
+ 
+ namespace caspar::core {
+@@ -89,6 +90,24 @@ corners cube_face(double angle, bool incoming, bool reverse)
+     }
+     return result;
+ }
++std::vector<std::wstring> producer_args(const std::wstring& spec)
++{
++    std::wistringstream stream(spec);
++    std::vector<std::wstring> result;
++    while (stream >> std::ws && stream.peek() != std::char_traits<wchar_t>::eof()) {
++        std::wstring token;
++        if (stream.peek() == L'"')
++            stream >> std::quoted(token);
++        else
++            stream >> token;
++        if (!stream)
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid quoted DME producer"));
++        result.push_back(std::move(token));
++    }
++    if (result.empty())
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Empty DME producer"));
++    return result;
++}
+ std::wstring background_spec(const std::wstring& hex)
+ {
+     if (hex.empty() || hex.size() > 8192 || hex.size() % 2)
+@@ -146,7 +165,7 @@ class dme_transition final : public frame_producer
+         , reverse_(reverse)
+     {
+         if (!backdrop.empty())
+-            background_ = deps.producer_registry->create_producer(deps, background_spec(backdrop));
++            background_ = deps.producer_registry->create_producer(deps, producer_args(background_spec(backdrop)));
+         if (effect_ != L"MOVE")
+             return;
+         if (manifest.size() > 262144 || manifest.size() % 2)
+@@ -173,7 +192,7 @@ class dme_transition final : public frame_producer
+             auto spec = row.second.get<std::string>("producer");
+             if (spec.size() > 4096 || spec.find_first_of("\r\n") != std::string::npos)
+                 CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid MOVE producer"));
+-            auto producer = deps.producer_registry->create_producer(deps, u16(spec));
++            auto producer = deps.producer_registry->create_producer(deps, producer_args(u16(spec)));
+             if (producer == frame_producer::empty())
+                 CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"MOVE producer unavailable"));
+             tracks_.push_back(
+@@ -308,7 +327,7 @@ class dme_transition final : public frame_producer
+                 tokens.push_back(v);
+         }
+         if (tokens.size() == 2 && boost::to_upper_copy(tokens[0]) == L"BACKGROUND") {
+-            auto producer = deps_.producer_registry->create_producer(deps_, background_spec(tokens[1]));
++            auto producer = deps_.producer_registry->create_producer(deps_, producer_args(background_spec(tokens[1])));
+             std::lock_guard<std::mutex> lock(mutex_);
+             pending_background_ = producer;
+             return make_ready_future(std::wstring(L"OK"));

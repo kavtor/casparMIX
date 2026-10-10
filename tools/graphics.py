@@ -114,6 +114,25 @@ with (root / 'server.log').open('w') as log:
             recovered = capture('recovered')
             assert pixel(recovered, 320, 180)[2] < 150
             results.update(watchdog=True, heartbeat_recovery=True)
+            centered_nodes = [dict(type='text', x=40, y=40+index*80, w=500, h=42,
+                                   size=18, text=label, color='#ffffff', bold=True,
+                                   align='center', valign='center')
+                              for index,label in enumerate(('NO SOURCE','1 - Camera A','2 - gyjp'))]
+            update(dict(width=640,height=360,timeout=10,nodes=centered_nodes))
+            centered = capture('ink-centered-text')
+            centers=[]
+            for node in centered_nodes:
+                rows=[]
+                for y in range(node['y'],node['y']+node['h']):
+                    if any(min(pixel(centered,x,y)[:3])>180 for x in range(40,540)):
+                        rows.append(y)
+                assert rows, node['text']
+                actual=(min(rows)+max(rows))/2
+                expected=node['y']+(node['h']-1)/2
+                assert abs(actual-expected)<=1,(node['text'],actual,expected)
+                centers.append({'text':node['text'],'actual':actual,'expected':expected})
+            results['ink_centered_text']=centers
+            update(dict(width=640,height=360,timeout=10,nodes=[dict(centered_nodes[0],valign='invalid')]),reject=True)
             if args.scene:
                 update(json.loads(args.scene.read_text()))
                 capture('client-scene')

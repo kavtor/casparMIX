@@ -1,0 +1,85 @@
+diff --git a/src/accelerator/ogl/image/image_kernel.cpp b/src/accelerator/ogl/image/image_kernel.cpp
+index 7157fa5a661f07234fa2acc8dee7c885bc15d830..73b8e51eeceeb7eef84388f2f00a7df00a4bb2d3 100644
+--- a/src/accelerator/ogl/image/image_kernel.cpp
++++ b/src/accelerator/ogl/image/image_kernel.cpp
+@@ -238,7 +238,7 @@ struct image_kernel::impl
+             shader_->set("sony_soft", wipe.soft / 270.0);
+             shader_->set("sony_border", wipe.border / 540.0);
+             shader_->set("sony_aspect", wipe.aspect);
+-            shader_->set("sony_output_aspect", params.aspect_ratio);
++            shader_->set("sony_output_aspect",wipe.output_aspect>0?wipe.output_aspect:params.aspect_ratio);
+             shader_->set("sony_multi", wipe.multi);
+             shader_->set("sony_vertices",wipe.vertices);
+             shader_->set("sony_rounding",wipe.rounding/100.0);
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 7d7d9086a4e29ce9f8f75767843dc2371e74d6a4..60e07c5f0d10a1e5d2fed33c775515b2160787fc 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -624,13 +624,19 @@ float sony_distance(vec2 p, float t, float cell_aspect)
+     if(sony_code==23)return (t*(bounds.x+bounds.y)-abs(normal.x)-abs(normal.y))/sqrt(1/(sx*sx)+1);
+     if(sony_code==24){vec2 metric=vec2(q.x*raster/ar,q.y),full=vec2(extent.x*raster/ar,extent.y);return (t*length(full)-length(metric))/max(1.0,1/ar);}
+     if(sony_code==26){
+-        vec2 figure=vec2(q.x*raster/ar,q.y),full=vec2(extent.x*raster/ar,extent.y);float radius=max(t,1e-5)*1.6*length(full);vec2 h=figure/radius;h.y=-h.y;
++        float figure_aspect=ar*1.1;vec2 figure=vec2(q.x*raster/figure_aspect,q.y),full=vec2(extent.x*raster/figure_aspect,extent.y);float radius=max(t,1e-5)*1.6*length(full);vec2 h=figure/radius;h.y=-h.y;
+         float a=dot(h,h)-1.0,f=a*a*a-h.x*h.x*h.y*h.y*h.y;
+         vec2 gradient=vec2(6*h.x*a*a-2*h.x*h.y*h.y*h.y,6*h.y*a*a-3*h.x*h.x*h.y*h.y);
+-        return -f*radius/max(length(vec2(gradient.x/ar,gradient.y)),1e-5);
++        return -f*radius/max(length(vec2(gradient.x/figure_aspect,gradient.y)),1e-5);
++    }
++    if(sony_code==27||sony_code==29){float radius=max(t,1e-5)*length(vec2(extent.x*raster/(ar*1.1),extent.y))*(sony_code==27?4.2:5.1);return sony_polygon(physical,vec2(radius*ar*1.1,radius),sony_code==27);}
++    if(sony_code==49){
++        float count=float(sony_vertices),height=sony_vertices%2==0?2.0:1.0+cos(3.141592654/count);
++        float width=2.0*sin(6.283185307*floor(count*.25+.5)/count);
++        float figure_aspect=ar*height/width;
++        float radius=max(t,1e-5)*length(vec2(extent.x*raster/figure_aspect,extent.y))/cos(3.141592654/count);
++        return sony_regular_polygon(physical,vec2(radius*figure_aspect,radius),sony_vertices);
+     }
+-    if(sony_code==27||sony_code==29){float radius=max(t,1e-5)*length(vec2(extent.x*raster/ar,extent.y))*(sony_code==27?4.2:5.1);return sony_polygon(physical,vec2(radius*ar,radius),sony_code==27);}
+-    if(sony_code==49){float radius=max(t,1e-5)*length(vec2(extent.x*raster/ar,extent.y))/cos(3.141592654/float(sony_vertices));return sony_regular_polygon(physical,vec2(radius*ar,radius),sony_vertices);}
+     if(sony_code>=100&&sony_code<=103){
+         int corner=sony_code-100;
+         vec2 point=corner==0?vec2(p.x,1-p.y):corner==1?p:corner==2?vec2(1-p.x,p.y):vec2(1)-p;
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index ac39a106c48515b621e90c028ed94c6f71bc03fa..f374f6662e9a1983e9b8a534a3295df618772ffe 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.9.0
++0.9.1
+diff --git a/src/core/frame/frame_transform.cpp b/src/core/frame/frame_transform.cpp
+index d9194b75e1c5e0b9e7089f740c4f61960eb1c85e..5e2092a375bc123cf03c0b7218a839b9118e61e9 100644
+--- a/src/core/frame/frame_transform.cpp
++++ b/src/core/frame/frame_transform.cpp
+@@ -133,7 +133,7 @@ bool operator==(const rectangle& lhs, const rectangle& rhs)
+ bool operator==(const sony_wipe& lhs, const sony_wipe& rhs)
+ {
+     return lhs.code == rhs.code && lhs.role == rhs.role && eq(lhs.progress, rhs.progress) && eq(lhs.soft, rhs.soft) &&
+-        eq(lhs.border, rhs.border) && eq(lhs.aspect, rhs.aspect) && lhs.multi == rhs.multi && lhs.vertices==rhs.vertices && eq(lhs.rounding,rhs.rounding) &&
++        eq(lhs.border, rhs.border) && eq(lhs.aspect, rhs.aspect) && eq(lhs.output_aspect,rhs.output_aspect) && lhs.multi == rhs.multi && lhs.vertices==rhs.vertices && eq(lhs.rounding,rhs.rounding) &&
+         eq(lhs.x, rhs.x) && eq(lhs.y, rhs.y) && lhs.reverse == rhs.reverse;
+ }
+ 
+diff --git a/src/core/frame/frame_transform.h b/src/core/frame/frame_transform.h
+index 5f6af201842743a378e89f3aa006780035273312..0bc2c6e8212a6dd0ababb80b956b638e29e46792 100644
+--- a/src/core/frame/frame_transform.h
++++ b/src/core/frame/frame_transform.h
+@@ -82,6 +82,7 @@ struct sony_wipe final
+     double soft = 0.0;
+     double border = 0.0;
+     double aspect = 1.0;
++    double output_aspect = 0.0; // Producer raster; raw nested routes must not reinterpret the mask.
+     int multi = 1;
+     int vertices = 5;
+     double rounding = 15.0;
+diff --git a/src/core/producer/wipe/sony_wipe_producer.cpp b/src/core/producer/wipe/sony_wipe_producer.cpp
+index 55f2a3b88486f3d55779a30914497ff005db41c3..d0de246be2076efb8798230c9b42a3c20aa2d64f 100644
+--- a/src/core/producer/wipe/sony_wipe_producer.cpp
++++ b/src/core/producer/wipe/sony_wipe_producer.cpp
+@@ -79,6 +79,7 @@ class sony_wipe_producer final : public frame_producer
+         : white_(create_color_frame(this, deps.frame_factory, uint32_t(0xffffffff)))
+     {
+         wipe_.code = code;
++        wipe_.output_aspect=double(deps.format_desc.square_width)/double(deps.format_desc.square_height);
+         update(params);
+     }
+     draw_frame frame_at(double progress) {

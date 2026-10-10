@@ -49,6 +49,21 @@ with (root/'server.log').open('w') as log:
    assert np.max(np.abs(rgb.sum(axis=2)-255))<=3,'Border partition loses brightness'
    result['green_centroid_x']=center;results[str(side)]=result
    cmd(f'CALL 3-1 "INNER_SOFT 15 OUTER_SOFT 3"');time.sleep(.1);soft=capture('soft-'+str(side));rgb=capture.rgb.astype(int);assert np.max(np.abs(rgb.sum(axis=2)-255))<=3
+   # Require the actual A/color/B weights, not merely conserved brightness.
+   # Red=A, green=border, blue=B; the whole-frame matte uses pixel centers.
+   d=(.5-(np.arange(1280)+.5)/1280)*(1280/720)
+   def coverage(distance,width):
+    u=np.clip((distance+width)/(2*width),0,1)
+    return u*u*(3-2*u)
+   border=10/540
+   inner_width=0 if side==1 else 2*border if side==-1 else border
+   outer_width=0 if side==-1 else 2*border if side==1 else border
+   inner=coverage(d-inner_width,15/270)
+   outer=np.maximum(inner,coverage(d+outer_width,3/270))
+   expected=np.stack((1-outer,outer-inner,inner),axis=1)*255
+   error=float(np.max(np.abs(rgb[360].astype(float)-expected)))
+   assert error<=4,('A/color/B partition is contaminated',side,error)
+   result['maximum_partition_error_rgb8']=error
    result['soft']=soft;before=capture.rgb.copy()
    s.sendall(b'CALL 3-1 "BORDER_SIDE 0 INNER_SOFT 101"\r\n');reply=f.readline().decode().strip();assert reply.startswith('4'),reply
    time.sleep(.1);capture('invalid-'+str(side));assert np.array_equal(before,capture.rgb),'Invalid profile changed prepared geometry'
