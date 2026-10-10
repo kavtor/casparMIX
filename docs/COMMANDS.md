@@ -435,3 +435,17 @@ directions are right-to-left, left-to-right, bottom-to-top and top-to-bottom.
 REVERSE exchanges A/B and reverses the same trajectory; final output remains B.
 The default radius is .16 of the bend-axis extent. Sony keyframe/multi-action
 variants and parameter editors remain pending.
+
+### Karaoke rows (0.21.0)
+
+```text
+PLAY 3-1 route://2 RENDERED WIPESONY 25 SONY 220 MANUAL 1 ROWNO 8 START -100 PHASE 0
+CALL 3-1 "PROGRESS .5 ROWNO 4 PHASE -100"
+```
+
+Karaoke 220–223 use tiled lanes. ROWNO is integer 1–64; START and PHASE
+accept -100…100. START selects the first lane, then wraps order. PHASE -100
+advances lanes simultaneously; +100 advances them sequentially. Tile length
+is set with existing TILESIZE; lane thickness follows ROWNO. Parameter updates
+are atomic, and progress retraces without a timer. SOFT/BORDER share the same
+frontier. Dedicated application/controller parameter menus are not yet included.

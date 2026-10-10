@@ -1,0 +1,21 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 8808a95868f0601cf03973283b254fb4abe5e951..9fc61d6eaa62045476b39f7c9c435930e9a7d1fa 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -644,7 +644,8 @@ float sony_spiral_rank(vec2 c,vec2 n) {
+     if(sony_code>=266&&sony_code<=269){
+         bool vertical=sony_code<=267;
+         if(sony_code==267)c.x=n.x-1.0-c.x;
+-        if(sony_code==269){c.y=n.y-1.0-c.y;c.x=n.x-1.0-c.x;}
++        // 269 starts upper-right; keep the top-to-bottom lane ordering.
++        if(sony_code==269)c.x=n.x-1.0-c.x;
+         float lane=vertical?c.x:c.y,lanes=vertical?n.x:n.y;
+         float cell=vertical?c.y:c.x,length=vertical?n.y:n.x;
+ 
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 249afd517d9df2473f6cf45b440786f180bc656b..503a21deb47d43c1715cd400032e4a9f82857c6f 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.18.1
++0.18.2

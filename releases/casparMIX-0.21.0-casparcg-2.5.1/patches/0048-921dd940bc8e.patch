@@ -1,0 +1,123 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 61e6e92d91491dfdbf7cd2b4059a84554a9bf618..5a03fb737b381f0b07b830ba4bb6e87342a7a914 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.19.2
++0.20.0
+diff --git a/src/core/frame/frame_transform.cpp b/src/core/frame/frame_transform.cpp
+index 4c163a98be87c49c049e9961fecc6ad6c58e3e82..b80bfc1deaed1fe212e18b2fa01fe124b12b4786 100644
+--- a/src/core/frame/frame_transform.cpp
++++ b/src/core/frame/frame_transform.cpp
+@@ -140,7 +140,7 @@ bool operator==(const sony_wipe& lhs, const sony_wipe& rhs)
+ 
+ bool operator==(const image_transform& lhs, const image_transform& rhs)
+ {
+-    if(lhs.surface.mode!=rhs.surface.mode||!eq(lhs.surface.progress,rhs.surface.progress)||!eq(lhs.surface.radius,rhs.surface.radius)||lhs.surface.reverse!=rhs.surface.reverse)return false;
++    if(lhs.surface.mode!=rhs.surface.mode||!eq(lhs.surface.progress,rhs.surface.progress)||!eq(lhs.surface.radius,rhs.surface.radius)||lhs.surface.reverse!=rhs.surface.reverse||lhs.surface.vertical!=rhs.surface.vertical)return false;
+     if(lhs.alpha.mode!=rhs.alpha.mode||lhs.alpha.invert!=rhs.alpha.invert||lhs.alpha.mask!=rhs.alpha.mask||lhs.alpha.mask_invert!=rhs.alpha.mask_invert||!eq(lhs.alpha.low,rhs.alpha.low)||!eq(lhs.alpha.high,rhs.alpha.high)||!boost::range::equal(lhs.alpha.rectangle,rhs.alpha.rectangle,eq))return false;
+     return lhs.wipe == rhs.wipe && eq(lhs.opacity, rhs.opacity) && eq(lhs.contrast, rhs.contrast) && eq(lhs.brightness, rhs.brightness) &&
+                eq(lhs.saturation, rhs.saturation) && boost::range::equal(lhs.anchor, rhs.anchor, eq) &&
+diff --git a/src/core/frame/frame_transform.h b/src/core/frame/frame_transform.h
+index b697b3f503fc156ea3bd7aba2f9bc189b9150ec4..8fedbce07bd0991af9a82bcfe5c969915f82e426 100644
+--- a/src/core/frame/frame_transform.h
++++ b/src/core/frame/frame_transform.h
+@@ -98,9 +98,10 @@ struct sony_wipe final
+ bool operator==(const sony_wipe& lhs, const sony_wipe& rhs);
+ 
+ struct page_surface final {
+-    int mode=0; // 1 page turn, 2 continuous roll
++    int mode=0; // 1 corner page turn, 2 continuous roll, 3 edge page turn
+     double progress=0, radius=.16;
+     bool reverse=false;
++    bool vertical=false; // Bend along Y instead of X; sample the original raster.
+ };
+ 
+ struct alpha_key {
+diff --git a/src/core/frame/page_geometry.h b/src/core/frame/page_geometry.h
+index 8b4edf00145ca5cbab1b788b10d1b9619a1be02e..ac16096e8e6875f9389ff52b3cdd4449e094a812 100644
+--- a/src/core/frame/page_geometry.h
++++ b/src/core/frame/page_geometry.h
+@@ -14,19 +14,19 @@ struct page_quad
+ inline std::vector<page_quad> page_mesh(const std::vector<core::frame_geometry::coord>& texture,
+                                         const core::page_surface&                       surface)
+ {
+-    if (texture.size() != 4 || (surface.mode != 1 && surface.mode != 2) || !std::isfinite(surface.progress) ||
++    if (texture.size() != 4 || (surface.mode != 1 && surface.mode != 2 && surface.mode != 3) || !std::isfinite(surface.progress) ||
+         !std::isfinite(surface.radius))
+         return {};
+     constexpr double       pi = 3.14159265358979323846, camera = 3., sqrt2 = 1.4142135623730951;
+-    const bool             corner = surface.mode == 1;
++    const bool             corner = surface.mode == 1, fold = surface.mode != 2;
+     const int              nx = corner ? 24 : 48, ny = corner ? 24 : 1;
+     const double           radius = std::clamp(surface.radius, .03, .4), p = std::clamp(surface.progress, 0., 1.);
+     const double           extent   = corner ? sqrt2 : 1.;
+-    const double           boundary = extent - p * (extent + (corner ? pi * radius : radius));
++    const double           boundary = extent - p * (extent + (fold ? pi * radius : radius));
+     std::vector<page_quad> result;
+     result.reserve(nx * ny);
+     const auto angle_at = [&](double d) {
+-        return d <= boundary ? 0 : corner ? std::min((d - boundary) / radius, pi) : (d - boundary) / radius;
++        return d <= boundary ? 0 : fold ? std::min((d - boundary) / radius, pi) : (d - boundary) / radius;
+     };
+     const auto tex = [&](double u, double v, bool y) {
+         auto get = [y](const auto& c) { return y ? c.texture_y : c.texture_x; };
+@@ -46,7 +46,7 @@ inline std::vector<page_quad> page_mesh(const std::vector<core::frame_geometry::
+                 double       bent = d, z = 0;
+                 if (d > boundary) {
+                     const double raw = (d - boundary) / radius;
+-                    if (corner && raw > pi) {
++                    if (fold && raw > pi) {
+                         bent = boundary - (d - boundary - pi * radius);
+                         z    = 2 * radius;
+                     } else {
+@@ -61,7 +61,10 @@ inline std::vector<page_quad> page_mesh(const std::vector<core::frame_geometry::
+                 if (surface.reverse)
+                     x = 1 - x;
+                 const double                sample = surface.reverse ? 1 - u : u;
+-                core::frame_geometry::coord c(x, y, tex(sample, v, false), tex(sample, v, true));
++                if (surface.vertical) std::swap(x,y);
++                core::frame_geometry::coord c(x, y,
++                    tex(surface.vertical ? v : sample, surface.vertical ? sample : v, false),
++                    tex(surface.vertical ? v : sample, surface.vertical ? sample : v, true));
+                 const double                normal = std::cos(angle_at(d));
+                 c.texture_r                        = (normal < 0 ? -1 : 1) * (.6 + .4 * std::abs(normal));
+                 face.coords.push_back(c);
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+index cf5a44deb03c02a11bf9eeab15f47c06c05a84dd..f0552698dece37697456eb15beee8fd6e528713c 100644
+--- a/src/core/producer/wipe/dme_producer.cpp
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -222,6 +222,17 @@ draw_frame sony_primitive_frame(int code,draw_frame a,draw_frame b,double t,bool
+         else {a.transform().image_transform.opacity=0;project_sony_plane(b,vertical,angle,scale,aspect);}
+         return draw_frame::over(a,b);
+     }
++    if((code>=1301&&code<=1304)||(code>=1321&&code<=1324)) {
++        // Manual/pictogram interpretation: incoming B unfolds from the edge
++        // in the arrow direction. REV folds A away along the same path.
++        const int direction = code%100-1;
++        auto& surface = b.transform().image_transform.surface;
++        surface.mode = code<1321 ? 3 : 2;
++        surface.vertical = direction>=2;
++        surface.reverse = direction==0||direction==2;
++        surface.progress = 1-t;
++        return draw_frame::over(a,b);
++    }
+     if(code==1201){
+         // Frame In: incoming texture grows from the centre over stationary A.
+         // Linear size is a project default; Sony multi-stage preparation and
+diff --git a/src/core/producer/wipe/sony_dme_catalogue.h b/src/core/producer/wipe/sony_dme_catalogue.h
+index 723923ceded3a5d55872458f23c1a6cc248d8c7e..c78051a162a63cd67cce58d7a2777919be5aca7c 100644
+--- a/src/core/producer/wipe/sony_dme_catalogue.h
++++ b/src/core/producer/wipe/sony_dme_catalogue.h
+@@ -5,9 +5,9 @@
+ namespace caspar::core::sony_dme {
+ // IDs from the operator-supplied union of the DVS/XVS preset catalogues.
+ // TODO: unresolved IDs are reserved; detailed reasons accompany the review
+-// inventory in Strata. They must never execute a substituted primitive.
++// inventory in kavtor. They must never execute a substituted primitive.
+ inline constexpr std::array<int,269> known{1001,1002,1003,1004,1005,1006,1007,1008,1011,1012,1013,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1041,1042,1043,1044,1045,1046,1047,1048,1051,1052,1053,1054,1055,1056,1057,1058,1061,1062,1063,1064,1068,1071,1072,1074,1076,1077,1088,1091,1092,1093,1094,1101,1102,1103,1104,1109,1110,1121,1122,1124,1131,1132,1133,1135,1201,1202,1203,1204,1205,1206,1207,1208,1209,1221,1222,1223,1224,1225,1251,1301,1302,1303,1304,1305,1306,1307,1308,1309,1310,1311,1312,1313,1315,1316,1317,1318,1321,1322,1323,1324,1325,1326,1327,1328,1329,1330,1331,1332,1333,1335,1336,1337,1338,1341,1342,1343,1344,1345,1346,1347,1348,1349,1350,1355,1356,1357,1358,1365,1371,1372,1378,1379,1381,1384,1385,1386,1387,1388,1389,1391,1393,1394,1396,1398,1399,1701,1702,2601,2602,2603,2604,2605,2606,2607,2608,2621,2622,2623,2624,2625,2626,2627,2628,2631,2632,2633,2634,2642,2644,2651,2652,2661,2662,2701,2702,2703,2704,2705,2706,2707,2708,2709,2710,2711,2712,2713,2715,2716,2717,2718,2721,2722,2723,2724,2725,2726,2727,2728,2729,2730,2731,2732,2733,2735,2736,2737,2738,2741,2742,2743,2744,2745,2746,2747,2748,2749,2750,2801,2802,2803,2804,2811,2812,2813,2814,2851,2852,2853,2854,2861,2862,2863,2864,3601,7001,7002,7003,7004,7005,7006,7007,7008,7021,7022,7023,7024,7025,7026,7027,7028,7029,7030,7031,7201,7202,7203,7204,7205,7206,7207,7208,7221,7222,7223,7224};
+-inline constexpr std::array<int,72> ready{1001,1002,1003,1004,1005,1006,1007,1008,1011,1012,1013,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1041,1042,1043,1044,1045,1046,1047,1048,1051,1052,1053,1054,1055,1056,1057,1058,1061,1062,1063,1064,1068,1101,1102,1103,1104,1121,1122,1201,1355,1356,1357,1358,1384,1385,2601,2602,2603,2604,2605,2606,2607,2608,2621,2622,2623,2624,2625,2626,2627,2628};
++inline constexpr std::array<int,80> ready{1001,1002,1003,1004,1005,1006,1007,1008,1011,1012,1013,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1041,1042,1043,1044,1045,1046,1047,1048,1051,1052,1053,1054,1055,1056,1057,1058,1061,1062,1063,1064,1068,1101,1102,1103,1104,1121,1122,1201,1301,1302,1303,1304,1321,1322,1323,1324,1355,1356,1357,1358,1384,1385,2601,2602,2603,2604,2605,2606,2607,2608,2621,2622,2623,2624,2625,2626,2627,2628};
+ inline bool implemented(int code){return std::binary_search(ready.begin(),ready.end(),code);}
+ inline bool reserved(int code){return std::binary_search(known.begin(),known.end(),code);}
+ }
