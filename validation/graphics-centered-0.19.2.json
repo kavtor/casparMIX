@@ -1,0 +1,27 @@
+{
+  "empty_startup": true,
+  "scene_accepted": true,
+  "meter_updates": true,
+  "green_below_yellow": true,
+  "invalid_values_rejected": true,
+  "invalid_scene_preserves_previous": true,
+  "watchdog": true,
+  "heartbeat_recovery": true,
+  "ink_centered_text": [
+    {
+      "text": "NO SOURCE",
+      "actual": 60.5,
+      "expected": 60.5
+    },
+    {
+      "text": "1 - Camera A",
+      "actual": 140.5,
+      "expected": 140.5
+    },
+    {
+      "text": "2 - gyjp",
+      "actual": 220.5,
+      "expected": 220.5
+    }
+  ]
+}

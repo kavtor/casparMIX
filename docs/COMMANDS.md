@@ -178,6 +178,10 @@ Node types: `rect`, `text`, `clock`, `bar`. Common keys: `x`, `y`, `w`, `h`,
 `lostOnly` (draw only after timeout). Text uses `text`, `size` (6–256 pixels),
 `align` (`left`, `center`, `right`), `bold`, `font` (`sans` or `mono`),
 `spacing` (0–16 pixels), optional `background` and `padding`.
+From 0.19.2, `valign` accepts `top` (unchanged default) or `center`. Center
+places the visible glyph ink inside node `h`, excluding transparent font padding.
+A centered background follows the node box; existing top-aligned backgrounds
+retain their previous geometry.
 Long text is ellipsized to its width. `clock` displays local engine-host time.
 Bars use `id`, `value`, `vertical`, `minimum`, `maximum` and optional `group`;
 colour bands of one meter share a group, target and release envelope. Callers

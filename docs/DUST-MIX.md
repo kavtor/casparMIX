@@ -54,3 +54,8 @@ Explicit lower ratios include a uniform dissolve by design. For pure dust use
 DUST_RATIO 1. Older saved 50% preparations are preserved; use default recall or
 set 100% in the operator UI. The 0.19.1 spatial regression supplements earlier
 brightness checks, which did not detect inversion of a whole image half.
+
+From 0.19.2, drawn borders and video use the same A/color/B partition. The
+video pair is normalized below the color band before compositing, so independent
+edge softness does not reveal the wrong source beneath the band. The earlier
+brightness-only test did not detect this color-partition error.

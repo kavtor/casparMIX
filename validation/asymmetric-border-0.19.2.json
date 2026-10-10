@@ -1,0 +1,105 @@
+{
+  "version": "2.5.1 N/A Stable (casparMIX 0.19.2)",
+  "0": {
+    "direct": {
+      "red": 450720,
+      "blue": 450720
+    },
+    "rendered_multiview": {
+      "red": 450720,
+      "blue": 450720
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "ccc565806fa4b7febd53e9043aa275fa3a19310c18923aa8c582845cf4f81136",
+    "green_centroid_x": 639.5,
+    "maximum_partition_error_rgb8": 0.6918503146702584,
+    "soft": {
+      "direct": {
+        "red": 447840,
+        "blue": 435600
+      },
+      "rendered_multiview": {
+        "red": 447840,
+        "blue": 435600
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "7e361e320bd4ee973d8874656bae6206369d23ed3c054789cf1e281acfa55780"
+    }
+  },
+  "-1": {
+    "direct": {
+      "red": 460800,
+      "blue": 441360
+    },
+    "rendered_multiview": {
+      "red": 460800,
+      "blue": 441360
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "b76dc8bb72bd2ad2552943d13a11e46ffb908bb8e2d23a486ae18c7699df6899",
+    "green_centroid_x": 626.5,
+    "maximum_partition_error_rgb8": 0.7618747287326375,
+    "soft": {
+      "direct": {
+        "red": 457920,
+        "blue": 426240
+      },
+      "rendered_multiview": {
+        "red": 457920,
+        "blue": 426240
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "4f561067a670715e72294ed8f252f99b39aba703f8917790e7ba204bd300c987"
+    }
+  },
+  "1": {
+    "direct": {
+      "red": 441360,
+      "blue": 460800
+    },
+    "rendered_multiview": {
+      "red": 441360,
+      "blue": 460800
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "0d2f2707aedeac51b37c53483ea7bfe9eeb4505d9ffb392327c741a45b08557b",
+    "green_centroid_x": 652.5,
+    "maximum_partition_error_rgb8": 0.7618747287326357,
+    "soft": {
+      "direct": {
+        "red": 438480,
+        "blue": 444960
+      },
+      "rendered_multiview": {
+        "red": 438480,
+        "blue": 444960
+      },
+      "identical_rgb_pixels": true,
+      "sha256": "e0da08113d2779670810acecfd4b781972f4891c3a45a7940716163f77028b76"
+    }
+  },
+  "start": {
+    "direct": {
+      "red": 921600,
+      "blue": 0
+    },
+    "rendered_multiview": {
+      "red": 921600,
+      "blue": 0
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "e7d80c4da43684a7682b0b0bcba80b1bebf618f2ce1c3977b46e55ac99c6357d"
+  },
+  "end": {
+    "direct": {
+      "red": 0,
+      "blue": 921600
+    },
+    "rendered_multiview": {
+      "red": 0,
+      "blue": 921600
+    },
+    "identical_rgb_pixels": true,
+    "sha256": "5e421ddd53a65cf045c22f06251792e464f4d1920a5319d205fbb24ef887dc17"
+  }
+}

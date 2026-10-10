@@ -1,0 +1,21 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 53dc5dd14fc3f62d138db1a211578edb592d83cd..93dd66874dbbd1dda5777c2af93e312d972010f3 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -5,7 +5,8 @@ project("CasparCG Server")
+ set(CONFIG_VERSION_MAJOR 2)
+ set(CONFIG_VERSION_MINOR 5)
+ set(CONFIG_VERSION_BUG 1)
+-set(CONFIG_VERSION_TAG "Stable")
++file(STRINGS "${PROJECT_SOURCE_DIR}/casparmix-version.txt" CASPARMIX_VERSION LIMIT_COUNT 1)
++set(CONFIG_VERSION_TAG "Stable (casparMIX ${CASPARMIX_VERSION})")
+ 
+ # support for language servers (eg, clangd or ccls)
+ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+new file mode 100644
+index 0000000000000000000000000000000000000000..6e8bf73aa550d4c57f6f35830f1bcdc7a4a62f38
+--- /dev/null
++++ b/src/casparmix-version.txt
+@@ -0,0 +1 @@
++0.1.0

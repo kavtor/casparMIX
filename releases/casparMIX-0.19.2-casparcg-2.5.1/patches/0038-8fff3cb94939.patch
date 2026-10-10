@@ -1,0 +1,20 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index c5523bd09b187d88eb8caeb979852a301d6c2728..7cca7711a0ddd81316ff859b8424d417b3a60b0b 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.17.0
++0.17.1
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+index b4968ad7283d417f9021e1abfe4fb02472b8f1da..0fff95eb06810b8a2595e899463e4b0e0b154864 100644
+--- a/src/core/producer/wipe/dme_producer.cpp
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -153,6 +153,8 @@ void project_sony_plane(draw_frame& frame,bool vertical,double angle,double scal
+ }
+ 
+ draw_frame sony_primitive_frame(int code,draw_frame a,draw_frame b,double t,bool reverse,double aspect) {
++    // Operator-validated SPLIT convention: NORM enters, REV exits.
++    if(code>=1011&&code<=1013)reverse=!reverse;
+     if(reverse){std::swap(a,b);t=1-t;}
+     const int index=(code%100)-1;
+     const std::array<std::array<double,2>,8> entry{{{-1,0},{1,0},{0,-1},{0,1},{-1,-1},{1,-1},{1,1},{-1,1}}};
