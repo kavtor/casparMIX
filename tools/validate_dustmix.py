@@ -42,6 +42,11 @@ with (root/'server.log').open('w') as log:
   cmd('PLAY 3-1 route://1 RENDERED');time.sleep(.1)
   cmd('PLAY 3-1 route://2 RENDERED DUSTMIX 25 MANUAL 1 DUST_RATIO .5 H_SIZE .02 V_SIZE .02 FLASH_RATE 0')
   cmd('PLAY 4-1 route://3 RENDERED');cmd('MIXER 4-1 FILL 0 0 .5 1')
+  cmd('CALL 3-1 "PROGRESS .05 DUST_RATIO 1"');time.sleep(.15);results['early_whole_frame']=capture('early-whole-frame')
+  rgb=capture.rgb.astype(float);left=float(rgb[:,:640,2].mean()/255);right=float(rgb[:,640:,2].mean()/255)
+  assert left<.1 and right<.1 and abs(left-right)<.05,('Half-screen inversion',left,right)
+  results['early_whole_frame']['blue_mean_left']=left;results['early_whole_frame']['blue_mean_right']=right
+  cmd('CALL 3-1 "DUST_RATIO .5"')
   pictures={}
   for progress in (0,.25,.5,.75,1,.5):
    cmd(f'CALL 3-1 "PROGRESS {progress}"');time.sleep(.15);result=capture('progress-'+str(progress)+'-'+str(len(results)))
@@ -51,11 +56,15 @@ with (root/'server.log').open('w') as log:
    if progress==1:assert np.min(rgb[:,:,2])>252 and np.max(rgb[:,:,0])<3
    if progress in pictures:assert np.array_equal(pictures[progress],capture.rgb),'Rewind changed deterministic particle mask'
    pictures[progress]=capture.rgb.copy();results[str(progress)]=result
+  cmd('CALL 3-1 "PROGRESS .25 DUST_RATIO 0"');time.sleep(.1);results['quarter_dissolve']=capture('quarter-dissolve');assert np.max(np.abs(capture.rgb.astype(int)-np.array([191,0,64])))<3
   cmd('CALL 3-1 "PROGRESS .5 DUST_RATIO 0"');time.sleep(.1);results['ratio_zero']=capture('ratio-zero');assert np.max(np.abs(capture.rgb.astype(int)-np.array([128,0,128])))<3
   cmd('CALL 3-1 "DUST_RATIO 1 H_SIZE .04 V_SIZE .04 FLASH_RATE 10"');time.sleep(.1);results['live']=capture('live');before=capture.rgb.copy()
   s.sendall(b'CALL 3-1 "DUST_RATIO .2 H_SIZE 0"\r\n');reply=f.readline().decode().strip();assert reply.startswith('4'),reply
   time.sleep(.1);results['invalid']=capture('invalid');assert np.array_equal(before,capture.rgb),'Invalid multi-parameter update changed valid state'
   cmd('PLAY 3-1 route://1 RENDERED');time.sleep(.1);cmd('PLAY 3-1 route://1 RENDERED DUSTMIX 25 MANUAL 1');cmd('CALL 3-1 "PROGRESS .5"');time.sleep(.1);results['same_source']=capture('same-source');assert np.min(capture.rgb[:,:,0])>252 and np.max(capture.rgb[:,:,2])<3
+  cmd('PLAY 3-1 route://1 RENDERED');time.sleep(.1);cmd('PLAY 3-1 route://1 RENDERED DUSTMIX 25 MANUAL 1 BORDERMODE GAP');cmd('CALL 3-1 "PROGRESS .25"');time.sleep(.1);results['packed_same_source']=capture('packed-same-source');assert np.min(capture.rgb[:,:,0])>252 and np.max(capture.rgb[:,:,1:])<3
+  cmd('PLAY 3-1 route://1 RENDERED');time.sleep(.1);cmd('PLAY 3-1 route://2 RENDERED DUSTMIX 25 MANUAL 1');cmd('CALL 3-1 "PROGRESS .05"');time.sleep(.1);results['default_pure_dust']=capture('default-pure-dust')
+  assert float(capture.rgb[:,:,2].mean()/255)<.1,'Default Dust Mix must not add a uniform dissolve'
   print('VERIFIED Dust Mix endpoints, complement, rewind, ratio zero, live/invalid parameters, same source and PGM/MV identity',flush=True)
 
  finally:

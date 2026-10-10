@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.19.1 — CasparCG 2.5.1 stable
+
+* Fix Dust Mix's incoming matte: a full-width role-1 texture must not invert its
+  right half as if it were a packed A/B mask (issue #22).
+* Keep opaque A under masked B in the packed path to prevent double attenuation.
+* Default to pure particles (ratio 100%); a lower explicit ratio still blends
+  with dissolve. Existing explicit preparations remain unchanged.
+* New early-progress half-image regression reproduces the previous inversion;
+  captured correction covers spatial continuity, packed/single masks, endpoints,
+  rewind and rendered PGM/MV identity. No dependency changes.
+* Soft-trail operator appearance remains deferred under issue #23.
+
+
 ## 0.19.0 — CasparCG 2.5.1 stable
 
 * Add native DUSTMIX with ratio, independent particle H/V size and reproducible

@@ -1,0 +1,36 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 86d7a65cc916c1d263131042e99ada6db800ed0a..70d8f28c92d5714372f96fdac3df9ad0d57edd71 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -846,7 +846,10 @@ float sony_matte(vec2 packed_uv)
+         float coverage=dust_coverage(p,sony_reverse?1.0-t:t);
+         if(sony_reverse)coverage=1.0-coverage;
+         if(sony_role==2)return 0.0;
+-        return outgoing?1.0-coverage:coverage;
++        // Role 1 is one full-width incoming matte, not a packed A/B texture.
++        if(sony_role==1)return coverage;
++        // With no border, packed mode keeps opaque A under masked B.
++        return outgoing?1.0:coverage;
+     }
+     float d = sony_distance(p, sony_reverse ? 1.0-t : t, sony_output_aspect*grid.y/grid.x);
+     if (sony_reverse) d = -d;
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 1cf0537c34385c81dd797cc51be2a589e17118e9..41915c799477856bc769e838128f06905e641650 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.19.0
++0.19.1
+diff --git a/src/core/frame/frame_transform.h b/src/core/frame/frame_transform.h
+index d1c6cd24e682fb513a9320686879931b00b4e841..b697b3f503fc156ea3bd7aba2f9bc189b9150ec4 100644
+--- a/src/core/frame/frame_transform.h
++++ b/src/core/frame/frame_transform.h
+@@ -77,7 +77,7 @@ struct rectangle final
+ struct sony_wipe final
+ {
+     int code = 0;
+-    double dust_ratio = .5, dust_h_size = .02, dust_v_size = .02, dust_flash = 0;
++    double dust_ratio = 1.0, dust_h_size = .02, dust_v_size = .02, dust_flash = 0;
+     int role = 0; // 0 packed keys, 1 incoming key, 2 drawn colour border
+     double progress = 0.0;
+     double soft = 0.0;

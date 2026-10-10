@@ -14,7 +14,7 @@ CALL 3-1 "DUST_RATIO .75 H_SIZE .03 V_SIZE .03 FLASH_RATE 10"
 ```
 
 DUST_RATIO is 0–1, H_SIZE/V_SIZE are .001–1 fractions of producer picture height,
-and FLASH_RATE is 0–100 progress-indexed sequence steps. Defaults: .5/.02/.02/0.
+and FLASH_RATE is 0–100 progress-indexed sequence steps. Defaults: 1/.02/.02/0 (0.19.1 onward).
 Zero ratio is a normal dissolve. Frame-local progress drives both video masks;
 there is no independently clocked HTML overlay. Fixed particles are reproducible;
 flash advances deterministically as progress advances and holds/retraces with
@@ -49,3 +49,8 @@ measures two independently identifiable tones at .25/.5/.75 progress.
 `validate_asymmetric_border.py` measures side placement and softened color
 partition, tests invalid updates/endpoints and compares PGM/MV captures.
 Operator morphology and real sources remain separate acceptance checks.
+
+Explicit lower ratios include a uniform dissolve by design. For pure dust use
+DUST_RATIO 1. Older saved 50% preparations are preserved; use default recall or
+set 100% in the operator UI. The 0.19.1 spatial regression supplements earlier
+brightness checks, which did not detect inversion of a whole image half.

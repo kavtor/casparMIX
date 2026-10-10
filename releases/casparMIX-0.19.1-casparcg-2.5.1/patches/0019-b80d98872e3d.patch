@@ -1,0 +1,384 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 2b7c5ae01848a77d95e2792eb83ab605c9aed91a..8f0916f768f0487bcf8d33827ce2c8dcecb645c1 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.4.2
++0.5.0
+diff --git a/src/core/CMakeLists.txt b/src/core/CMakeLists.txt
+index d5d157a24e2355d827d0823baf08ec38111525b0..9c5d743a880616243ad2447988db63910962d036 100644
+--- a/src/core/CMakeLists.txt
++++ b/src/core/CMakeLists.txt
+@@ -24,6 +24,7 @@ set(SOURCES
+ 		producer/transition/transition_producer.cpp
+ 		producer/transition/sting_producer.cpp
+ 		producer/route/route_producer.cpp
++		producer/wipe/dme_producer.cpp
+ 		producer/wipe/sony_wipe_producer.cpp
+ 
+ 		producer/cg_proxy.cpp
+@@ -65,6 +66,7 @@ set(HEADERS
+ 		producer/transition/transition_producer.h
+ 		producer/transition/sting_producer.h
+ 		producer/route/route_producer.h
++		producer/wipe/dme_producer.h
+ 		producer/wipe/sony_wipe_producer.h
+ 
+ 		producer/cg_proxy.h
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..c612a3b0f5b3deec5e9a004c6cf56004330d6528
+--- /dev/null
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -0,0 +1,315 @@
++// Additive native DME primitives. No CPU video readback or external render loop.
++#include "dme_producer.h"
++#include <algorithm>
++#include <boost/algorithm/string.hpp>
++#include <boost/property_tree/json_parser.hpp>
++#include <cmath>
++#include <common/future.h>
++#include <common/utf.h>
++#include <core/frame/frame_transform.h>
++#include <core/producer/frame_producer_registry.h>
++#include <mutex>
++#include <sstream>
++
++namespace caspar::core {
++namespace {
++using tree = boost::property_tree::ptree;
++double bounded(double v, double lo, double hi)
++{
++    if (!std::isfinite(v) || v < lo || v > hi)
++        CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid DME geometry"));
++    return v;
++}
++struct pose
++{
++    std::array<double, 4> fill{0, 0, 1, 1}, clip{0, 0, 1, 1}, crop{0, 0, 1, 1};
++    double                opacity = 1, volume = 0;
++    double                order = 0;
++};
++pose read_pose(const tree& t)
++{
++    pose p;
++    auto rect = [&](const char* key, std::array<double, 4>& out) {
++        auto& a = t.get_child(key);
++        if (a.size() != 4)
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"DME rectangle requires four values"));
++        int i = 0;
++        for (auto& v : a)
++            out[i++] = bounded(v.second.get_value<double>(), -10000, 10000);
++        if (out[2] <= 0 || out[3] <= 0)
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Empty DME rectangle"));
++    };
++    rect("fill", p.fill);
++    rect("clip", p.clip);
++    rect("crop", p.crop);
++    p.opacity = bounded(t.get<double>("opacity"), 0, 1);
++    p.volume  = bounded(t.get<double>("volume"), 0, 1);
++    p.order   = bounded(t.get<double>("order", 0), -1, 32);
++    return p;
++}
++pose interpolate(const pose& a, const pose& b, double t)
++{
++    pose p = a;
++    for (int i = 0; i < 4; ++i) {
++        p.fill[i] = a.fill[i] + (b.fill[i] - a.fill[i]) * t;
++        p.clip[i] = a.clip[i] + (b.clip[i] - a.clip[i]) * t;
++        p.crop[i] = a.crop[i] + (b.crop[i] - a.crop[i]) * t;
++    }
++    p.opacity = a.opacity + (b.opacity - a.opacity) * t;
++    p.volume  = a.volume + (b.volume - a.volume) * t;
++    p.order   = a.order + (b.order - a.order) * t;
++    return p;
++}
++void apply(draw_frame& f, const pose& p)
++{
++    auto& x                     = f.transform().image_transform;
++    x.enable_geometry_modifiers = true;
++    x.fill_translation          = {p.fill[0], p.fill[1]};
++    x.fill_scale                = {p.fill[2], p.fill[3]};
++    x.clip_translation          = {p.clip[0], p.clip[1]};
++    x.clip_scale                = {p.clip[2], p.clip[3]};
++    x.crop.ul                   = {p.crop[0], p.crop[1]};
++    x.crop.lr                   = {p.crop[0] + p.crop[2], p.crop[1] + p.crop[3]};
++    x.opacity *= p.opacity;
++    f.transform().audio_transform.volume *= p.volume;
++}
++// Minimal camera projection for video-textured planar faces of a rotating cube.
++// Existing GPU perspective transforms interpolate texture UVs; no game engine is involved.
++corners cube_face(double angle, bool incoming, bool reverse)
++{
++    constexpr double       camera = 3.5;
++    corners                result;
++    std::array<double, 2>* points[] = {&result.ul, &result.ur, &result.lr, &result.ll};
++    const double           xs[] = {-.5, .5, .5, -.5}, ys[] = {-.5, -.5, .5, .5};
++    for (int i = 0; i < 4; ++i) {
++        double x = incoming ? (reverse ? -.5 : .5) : xs[i], z = incoming ? (reverse ? xs[i] : -xs[i]) : .5;
++        double rx = x * std::cos(angle) + z * std::sin(angle), rz = -x * std::sin(angle) + z * std::cos(angle);
++        double scale = (camera - .5) / (camera - rz);
++        *points[i]   = {.5 + rx * scale, .5 + ys[i] * scale};
++    }
++    return result;
++}
++class dme_transition final : public frame_producer
++{
++    struct track
++    {
++        spl::shared_ptr<frame_producer> producer;
++        pose                            from, to;
++    };
++    spl::shared_ptr<frame_producer> destination_, source_ = frame_producer::empty();
++    std::vector<track>              tracks_;
++    std::wstring                    effect_;
++    int                             duration_, current_ = 0;
++    bool                            manual_, reverse_, ready_ = false;
++    double                          progress_ = 0;
++    std::mutex                      mutex_;
++
++    draw_frame last_;
++
++  public:
++    dme_transition(const frame_producer_dependencies&     deps,
++                   const spl::shared_ptr<frame_producer>& dst,
++                   std::wstring                           effect,
++                   int                                    duration,
++                   bool                                   manual,
++                   bool                                   reverse,
++                   const std::wstring&                    manifest)
++        : destination_(dst)
++        , effect_(effect)
++        , duration_(duration)
++        , manual_(manual)
++        , reverse_(reverse)
++    {
++        if (effect_ != L"MOVE")
++            return;
++        if (manifest.size() > 262144 || manifest.size() % 2)
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid MOVE manifest size"));
++        std::string json;
++        json.reserve(manifest.size() / 2);
++        auto digit = [](wchar_t c) {
++            if (c >= L'0' && c <= L'9')
++                return int(c - L'0');
++            if (c >= L'a' && c <= L'f')
++                return int(c - L'a' + 10);
++            if (c >= L'A' && c <= L'F')
++                return int(c - L'A' + 10);
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid MOVE hex"));
++        };
++        for (size_t i = 0; i < manifest.size(); i += 2)
++            json.push_back(char((digit(manifest[i]) << 4) | digit(manifest[i + 1])));
++        tree               root;
++        std::istringstream stream(json);
++        boost::property_tree::read_json(stream, root);
++        if (root.size() > 66 || root.empty())
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"MOVE requires 1–66 tracks"));
++        for (auto& row : root) {
++            auto spec = row.second.get<std::string>("producer");
++            if (spec.size() > 4096 || spec.find_first_of("\r\n") != std::string::npos)
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid MOVE producer"));
++            auto producer = deps.producer_registry->create_producer(deps, u16(spec));
++            if (producer == frame_producer::empty())
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"MOVE producer unavailable"));
++            tracks_.push_back(
++                {producer, read_pose(row.second.get_child("from")), read_pose(row.second.get_child("to"))});
++        }
++    }
++    void       leading_producer(const spl::shared_ptr<frame_producer>& src) override { source_ = src; }
++    draw_frame first_frame(video_field field) override
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        return last_ ? last_ : source_->last_frame(field);
++    }
++    draw_frame last_frame(video_field field) override
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        return last_ ? last_ : source_->last_frame(field);
++    }
++    bool                            is_ready() override { return destination_->is_ready(); }
++    spl::shared_ptr<frame_producer> following_producer() const override
++    {
++        return !manual_ && ready_ && current_ >= duration_ ? destination_ : frame_producer::empty();
++    }
++    draw_frame receive_impl(video_field field, int samples) override
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        destination_->first_frame(field);
++        ready_ = destination_->is_ready();
++        for (auto& track : tracks_) {
++            track.producer->first_frame(field);
++            ready_ = ready_ && track.producer->is_ready();
++        }
++        if (!ready_)
++            return source_->receive(field, samples);
++        if (!manual_ && field != video_field::b)
++            progress_ = duration_ == 1 ? 1 : std::min(1., double(current_) / double(duration_ - 1));
++        auto out = source_->receive(field, samples), in = destination_->receive(field, samples);
++        if (!out)
++            out = source_->last_frame(field);
++        if (!in)
++            in = destination_->last_frame(field);
++        auto result = progress_ <= 0 ? out : progress_ >= 1 ? in : draw_frame::empty();
++        if (progress_ > 0 && progress_ < 1) {
++            if (effect_ == L"MOVE") {
++                std::vector<std::pair<double, draw_frame>> layers;
++                for (auto& track : tracks_) {
++                    auto raw = track.producer->receive(field, samples);
++                    if (!raw)
++                        raw = track.producer->last_frame(field);
++                    auto frame = draw_frame::push(raw);
++                    auto p     = interpolate(track.from, track.to, progress_);
++                    apply(frame, p);
++                    layers.emplace_back(p.order, std::move(frame));
++                }
++                std::stable_sort(layers.begin(), layers.end(), [](auto& a, auto& b) { return a.first < b.first; });
++                for (auto& layer : layers)
++                    result = draw_frame::over(result, layer.second);
++            } else {
++                out = draw_frame::push(out);
++                in  = draw_frame::push(in);
++                out.transform().audio_transform.volume *= 1 - progress_;
++                in.transform().audio_transform.volume *= progress_;
++                if (effect_.find(L"PUSH_") == 0 || effect_.find(L"SLIDE_") == 0) {
++                    const bool   push           = effect_.find(L"PUSH_") == 0;
++                    const auto   dir            = effect_.substr(push ? 5 : 6);
++                    const bool   vertical       = dir == L"TOP" || dir == L"BOTTOM";
++                    const double sign           = dir == L"RIGHT" || dir == L"BOTTOM" ? 1 : -1;
++                    auto&        a              = out.transform().image_transform;
++                    auto&        b              = in.transform().image_transform;
++                    a.enable_geometry_modifiers = b.enable_geometry_modifiers = true;
++                    if (push)
++                        a.fill_translation[vertical ? 1 : 0] = -sign * progress_;
++                    b.fill_translation[vertical ? 1 : 0] = sign * (1 - progress_);
++                    result                               = draw_frame::over(out, in);
++                } else if (effect_ == L"CUBE") {
++                    out.transform().image_transform.enable_geometry_modifiers = true;
++                    in.transform().image_transform.enable_geometry_modifiers  = true;
++                    out.transform().image_transform.perspective =
++                        cube_face((reverse_ ? 1 : -1) * progress_ * 1.5707963267948966, false, reverse_);
++                    in.transform().image_transform.perspective =
++                        cube_face((reverse_ ? 1 : -1) * progress_ * 1.5707963267948966, true, reverse_);
++                    result = progress_ < .5 ? draw_frame::over(in, out) : draw_frame::over(out, in);
++                } else {
++                    // Zoom through the outgoing picture, reveal the incoming at full frame.
++                    auto& x                     = out.transform().image_transform;
++                    x.enable_geometry_modifiers = true;
++                    double scale                = 1 + 3 * progress_;
++                    x.fill_scale                = {scale, scale};
++                    x.fill_translation          = {(1 - scale) / 2, (1 - scale) / 2};
++                    x.opacity *= 1 - progress_;
++                    result = draw_frame::over(in, out);
++                }
++            }
++        }
++        if (!manual_ && field != video_field::b && current_ < duration_)
++            ++current_;
++        last_ = result;
++        return result;
++    }
++    std::future<std::wstring> call(const std::vector<std::wstring>& params) override
++    {
++        std::vector<std::wstring> tokens;
++        for (auto& part : params) {
++            std::wistringstream s(part);
++            std::wstring        v;
++            while (s >> v)
++                tokens.push_back(v);
++        }
++        if (tokens.size() != 2 || boost::to_upper_copy(tokens[0]) != L"PROGRESS")
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"DME CALL requires PROGRESS value"));
++        size_t consumed = 0;
++        double p        = std::stod(tokens[1], &consumed);
++        if (consumed != tokens[1].size())
++            CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid DME progress"));
++        bounded(p, 0, 1);
++        std::lock_guard<std::mutex> lock(mutex_);
++        manual_   = true;
++        progress_ = p;
++        return make_ready_future(std::wstring(L"OK"));
++    }
++    std::wstring   name() const override { return L"native-dme"; }
++    std::wstring   print() const override { return L"native-dme[" + effect_ + L"]"; }
++    monitor::state state() const override { return {}; }
++};
++} // namespace
++spl::shared_ptr<frame_producer> create_dme_transition(const frame_producer_dependencies&     deps,
++                                                      const spl::shared_ptr<frame_producer>& dst,
++                                                      const std::vector<std::wstring>&       params)
++{
++    for (size_t i = 0; i < params.size(); ++i)
++        if (boost::to_upper_copy(params[i]) == L"DMENATIVE") {
++            if (i + 2 >= params.size())
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"DMENATIVE needs duration and effect"));
++            size_t used     = 0;
++            int    duration = std::stoi(params[i + 1], &used);
++            if (used != params[i + 1].size() || duration < 1 || duration > 10000)
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid DME duration"));
++            auto effect = boost::to_upper_copy(params[i + 2]);
++            if (effect != L"MOVE" && effect != L"CUBE" && effect != L"ZOOM" && effect != L"PUSH_LEFT" &&
++                effect != L"PUSH_RIGHT" && effect != L"PUSH_TOP" && effect != L"PUSH_BOTTOM" &&
++                effect != L"SLIDE_LEFT" && effect != L"SLIDE_RIGHT" && effect != L"SLIDE_TOP" &&
++                effect != L"SLIDE_BOTTOM")
++                CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unknown native DME effect"));
++            bool         manual = false, reverse = false;
++            std::wstring manifest;
++            for (size_t j = i + 3; j < params.size(); j += 2) {
++                if (j + 1 >= params.size())
++                    CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Missing DME option"));
++                auto option = boost::to_upper_copy(params[j]);
++                if (option == L"MANUAL") {
++                    if (params[j + 1] != L"0" && params[j + 1] != L"1")
++                        CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid DME manual flag"));
++                    manual = params[j + 1] == L"1";
++                } else if (option == L"REVERSE") {
++                    if (params[j + 1] != L"0" && params[j + 1] != L"1")
++                        CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Invalid DME reverse flag"));
++                    reverse = params[j + 1] == L"1";
++                } else if (option == L"SCENE")
++                    manifest = params[j + 1];
++                else
++                    CASPAR_THROW_EXCEPTION(user_error() << msg_info(L"Unknown DME option"));
++            }
++            return spl::make_shared<dme_transition>(deps, dst, effect, duration, manual, reverse, manifest);
++        }
++    return frame_producer::empty();
++}
++} // namespace caspar::core
+diff --git a/src/core/producer/wipe/dme_producer.h b/src/core/producer/wipe/dme_producer.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..67988802e64749ea5b0b318c1281ab97167d78a6
+--- /dev/null
++++ b/src/core/producer/wipe/dme_producer.h
+@@ -0,0 +1,7 @@
++#pragma once
++#include <core/producer/frame_producer.h>
++namespace caspar::core {
++spl::shared_ptr<frame_producer> create_dme_transition(const frame_producer_dependencies&,
++                                                      const spl::shared_ptr<frame_producer>& destination,
++                                                      const std::vector<std::wstring>&);
++}
+diff --git a/src/protocol/amcp/AMCPCommandsImpl.cpp b/src/protocol/amcp/AMCPCommandsImpl.cpp
+index cebdc0dd1b6dbb5642d71066c3dea3801fba1a9d..758b5b069a7fb4b6cf02c2e247f8a382b55784e7 100644
+--- a/src/protocol/amcp/AMCPCommandsImpl.cpp
++++ b/src/protocol/amcp/AMCPCommandsImpl.cpp
+@@ -55,6 +55,7 @@
+ #include <core/producer/transition/sting_producer.h>
+ #include <core/producer/transition/transition_producer.h>
+ #include <core/producer/wipe/sony_wipe_producer.h>
++#include <core/producer/wipe/dme_producer.h>
+ #include <core/video_format.h>
+ 
+ #include <protocol/osc/client.h>
+@@ -295,7 +296,9 @@ std::wstring loadbg_command(command_context& ctx)
+         transition_info                 transitionInfo;
+         sting_info                      stingInfo;
+ 
+-        transition_producer = create_sony_wipe_transition(get_producer_dependencies(channel, ctx), new_producer, ctx.parameters);
++        transition_producer = create_dme_transition(get_producer_dependencies(channel, ctx), new_producer, ctx.parameters);
++        if(transition_producer == frame_producer::empty())
++            transition_producer = create_sony_wipe_transition(get_producer_dependencies(channel, ctx), new_producer, ctx.parameters);
+         if (transition_producer != frame_producer::empty()) {
+             // Explicit native Sony wipe; legacy transition parsing is unchanged.
+         } else if (try_match_sting(ctx.parameters, stingInfo)) {
