@@ -5,7 +5,7 @@
     "tag": "v2.5.1-stable",
     "commit": "ec38d94442387c95f05c816e66e6719c2e9e197f"
   },
-  "head": "9ec5851a268174defba3515e310423b5aa6276d7",
+  "head": "05ed2f95631fad49c935a6adfccd487a89d9fb6a",
   "new_build_dependencies": [
     "FreeType development headers and library"
   ],
@@ -258,6 +258,11 @@
       "commit": "9ec5851a268174defba3515e310423b5aa6276d7",
       "subject": "feat(wipes): add native phased karaoke rows",
       "patch": "patches/0049-9ec5851a2681.patch"
+    },
+    {
+      "commit": "05ed2f95631fad49c935a6adfccd487a89d9fb6a",
+      "subject": "fix(wipes): bound karaoke modifiers by lane dimensions",
+      "patch": "patches/0050-05ed2f95631f.patch"
     }
   ],
   "validation": "Combined and ordered patches reproduce the committed engine tree"

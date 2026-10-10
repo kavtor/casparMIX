@@ -67,11 +67,17 @@ with (root/'server.log').open('w') as log:
    before=capture.rgb.copy();s.sendall(b'CALL 3-1 "START -100 ROWNO 0"\r\n');reply=f.readline().decode().strip();assert reply.startswith('4'),reply
    time.sleep(.1);capture(f'{code}-invalid');assert np.array_equal(before,capture.rgb),'Invalid update changed prepared rows'
    cmd('CALL 3-1 "PROGRESS .5 START -100 PHASE 0 SOFT 8 BORDER 5 BORDERCOLOR #00ff00"');time.sleep(.1);soft=capture(f'{code}-soft-border');assert np.max(np.abs(capture.rgb.astype(int).sum(axis=2)-255))<=3
+   density={}
+   for rows in [1,64]:
+    cmd(f'CALL 3-1 "PROGRESS .5 ROWNO {rows} SOFT 100 BORDER 100"');time.sleep(.1)
+    density[str(rows)]=capture(f'{code}-density-{rows}')
+    assert np.max(np.abs(capture.rgb.astype(int).sum(axis=2)-255))<=3
+    assert float((capture.rgb[:,:,1]>220).mean())<.35,'Border exceeded the actual cell width'
    cmd('PLAY 3-1 route://2 RENDERED');time.sleep(.1);cmd(f'PLAY 3-1 route://1 RENDERED WIPESONY 25 SONY {code} MANUAL 1 REVERSE 1')
    cmd('CALL 3-1 "PROGRESS .25"');time.sleep(.1);reverse=capture(f'{code}-reverse');assert np.max(np.abs(capture.rgb.astype(int)-three_quarters.astype(int)))<=1,'REV does not retrace NORM within 8-bit blend rounding'
    cmd('PLAY 3-1 route://1 RENDERED');time.sleep(.1);cmd(f'PLAY 3-1 route://1 RENDERED WIPESONY 25 SONY {code} MANUAL 1');cmd('CALL 3-1 "PROGRESS .5"');time.sleep(.1);same=capture(f'{code}-same-source');assert np.min(capture.rgb[:,:,0])>=253 and np.max(capture.rgb[:,:,1:])<=2
    cmd('PLAY 3-1 route://1 RENDERED');time.sleep(.1);cmd(f'PLAY 3-1 route://2 RENDERED WIPESONY 10 SONY {code}');time.sleep(.5);auto=capture(f'{code}-auto');assert np.min(capture.rgb[:,:,2])>=253
-   results[str(code)]={'reverse':reverse,'same_source':same,'auto_endpoint':auto,'poses':poses,'simultaneous':sim,'first_lane':first,'last_lane':last,'soft_border':soft,'atomic_invalid_update':True};print('VERIFIED SONY KARAOKE',code,flush=True)
+   results[str(code)]={'density_extremes':density,'reverse':reverse,'same_source':same,'auto_endpoint':auto,'poses':poses,'simultaneous':sim,'first_lane':first,'last_lane':last,'soft_border':soft,'atomic_invalid_update':True};print('VERIFIED SONY KARAOKE',code,flush=True)
   print('VERIFIED karaoke endpoints, monotonicity, rewind, four orientations, phase extremes, start lanes, atomic updates, soft/border and exact PGM/MV identity',flush=True)
 
  finally:

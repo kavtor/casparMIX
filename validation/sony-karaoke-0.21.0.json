@@ -1,6 +1,32 @@
 {
   "version": "2.5.1 N/A Stable (casparMIX 0.21.0)",
   "220": {
+    "density_extremes": {
+      "1": {
+        "direct": {
+          "red": 421200,
+          "blue": 421200
+        },
+        "rendered_multiview": {
+          "red": 421200,
+          "blue": 421200
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "c3e28795aa4f85139ef3e2261d68606ea7b3f6a5408d348fb42ec8218604c34d"
+      },
+      "64": {
+        "direct": {
+          "red": 450256,
+          "blue": 448621
+        },
+        "rendered_multiview": {
+          "red": 450256,
+          "blue": 448621
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "3871269252fc0b90171631723e8f6abddf3d21db96364a55000b45f9c073ac9d"
+      }
+    },
     "reverse": {
       "direct": {
         "red": 211140,
@@ -194,6 +220,32 @@
     "atomic_invalid_update": true
   },
   "221": {
+    "density_extremes": {
+      "1": {
+        "direct": {
+          "red": 421200,
+          "blue": 421200
+        },
+        "rendered_multiview": {
+          "red": 421200,
+          "blue": 421200
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "80c1b80c2ceb7c8fdde759e4e617534d6b7ea8f0ad3b6563cf9ef7aa5255ae43"
+      },
+      "64": {
+        "direct": {
+          "red": 450256,
+          "blue": 448621
+        },
+        "rendered_multiview": {
+          "red": 450256,
+          "blue": 448621
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "1ced41178a7b516964d61b0dfc05db8f7d2c0bb7a8b9c5a42dc118a6dda2ac4c"
+      }
+    },
     "reverse": {
       "direct": {
         "red": 211140,
@@ -387,6 +439,32 @@
     "atomic_invalid_update": true
   },
   "222": {
+    "density_extremes": {
+      "1": {
+        "direct": {
+          "red": 390400,
+          "blue": 390400
+        },
+        "rendered_multiview": {
+          "red": 390400,
+          "blue": 390400
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "4dcd04d60b2ae78f32e0723af1e6c01ae04edf98e9a609c37d910db81951af2b"
+      },
+      "64": {
+        "direct": {
+          "red": 450924,
+          "blue": 448044
+        },
+        "rendered_multiview": {
+          "red": 450924,
+          "blue": 448044
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "d4faee7c514d8cc3a2b52973562dbff799a7047b8e2f9b3492f7c1a7f06ac0d5"
+      }
+    },
     "reverse": {
       "direct": {
         "red": 218880,
@@ -580,6 +658,32 @@
     "atomic_invalid_update": true
   },
   "223": {
+    "density_extremes": {
+      "1": {
+        "direct": {
+          "red": 390400,
+          "blue": 390400
+        },
+        "rendered_multiview": {
+          "red": 390400,
+          "blue": 390400
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "efc6525d98df356fdb7f7abf74973658f4061218b55517897239d346b0e82507"
+      },
+      "64": {
+        "direct": {
+          "red": 450924,
+          "blue": 448044
+        },
+        "rendered_multiview": {
+          "red": 450924,
+          "blue": 448044
+        },
+        "identical_rgb_pixels": true,
+        "sha256": "14997c923ee8f6b609b55a6bd854dc78c4040615b06f1a16f7a20f6830e0fc81"
+      }
+    },
     "reverse": {
       "direct": {
         "red": 218880,

@@ -3,7 +3,7 @@
 ## 0.21.0 — CasparCG 2.5.1 stable
 
 * Add Sony-numbered Karaoke 220–223 row/tile progress with START, ROWNO and PHASE. The manual documents these controls; four-axis default orientation is a project interpretation because the pictograms do not identify direction.
-* Defaults: 8 rows, START -100, PHASE 0; phase -100 reveals all rows together and +100 completes each row before the next. Live command updates are bounded and atomic. Shared native distance field retains SOFT/BORDER alignment.
+* Defaults: 8 rows, START -100, PHASE 0; phase -100 reveals all rows together and +100 completes each row before the next. Live command updates are bounded and atomic. Shared native distance field retains SOFT/BORDER alignment, bounded by actual lane dimensions at high row counts.
 * Catalogue: 87 wipes implemented, 29 reserved; DME remains 80/189. Dedicated parameter menus and operator morphology remain pending. No new dependencies.
 
 ## 0.20.0 — CasparCG 2.5.1 stable
