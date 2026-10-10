@@ -1,0 +1,79 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index d0e6c727aeef4c41a1d26287ff34e4986d88c995..a0771973f9a32653e72dfca3d81a8f39b3121b92 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -607,29 +607,29 @@ float sony_spiral_rank(vec2 c,vec2 n) {
+ }float sony_tile_rank(vec2 c,vec2 n) {
+     float total=n.x*n.y;
+     if(sony_code>=250&&sony_code<=257){
+-        bool vertical=sony_code<=253;
+-        int variant=vertical?sony_code-250:sony_code-254;
+-        float split=floor((vertical?n.x:n.y)*.5);
+-        bool second=(vertical?c.x:c.y)>=split;
++        bool vertical=sony_code<=253;int variant=vertical?sony_code-250:sony_code-254;
++        float dimension=vertical?n.x:n.y,original=vertical?c.x:c.y;
++        bool second=original>floor((dimension-1.0)*.5);
++        bool central_cell=mod(dimension,2.0)>0.0&&original==floor(dimension*.5);
+         if(vertical){
+-            float width=second?n.x-split:split;
+-            if(second)c.x=n.x-1.0-c.x;
+-            n.x=width;
+-            if(variant==1||(variant==2&&second)||(variant==3&&!second))c.y=n.y-1.0-c.y;
++            c.x=min(c.x,n.x-1.0-c.x);n.x=ceil(n.x*.5);
++            bool flip=variant==1||(variant==2&&second)||(variant==3&&!second);
++            if(flip)c.y=n.y-1.0-c.y;
+             float rank=c.x*n.y+(mod(c.x,2.0)<1.0?c.y:n.y-1.0-c.y);
++            if(central_cell&&(variant==2||variant==3))rank=min(rank,c.x*n.y+(mod(c.x,2.0)<1.0?n.y-1.0-c.y:c.y));
+             return rank/(n.x*n.y)*total;
+         }
+-        float height=second?n.y-split:split;
+-        if(second)c.y=n.y-1.0-c.y;
+-        n.y=height;
+-        if(variant==1||(variant==2&&second)||(variant==3&&!second))c.x=n.x-1.0-c.x;
++        c.y=min(c.y,n.y-1.0-c.y);n.y=ceil(n.y*.5);
++        bool flip=variant==1||(variant==2&&second)||(variant==3&&!second);
++        if(flip)c.x=n.x-1.0-c.x;
+         float rank=c.y*n.x+(mod(c.y,2.0)<1.0?c.x:n.x-1.0-c.x);
++        if(central_cell&&(variant==2||variant==3))rank=min(rank,c.y*n.x+(mod(c.y,2.0)<1.0?n.x-1.0-c.x:c.x));
+         return rank/(n.x*n.y)*total;
+     }
+     if(sony_code>=260&&sony_code<=265){
+         bool four=sony_code>=264,vertical=sony_code==260||sony_code==261||sony_code==264;
+-        if(four||sony_code<=261){float split=floor(n.x*.5),width=c.x>=split?n.x-split:split;if(c.x>=split)c.x=n.x-1.0-c.x;n.x=width;}
+-        if(four||sony_code==262||sony_code==263){float split=floor(n.y*.5),height=c.y>=split?n.y-split:split;if(c.y>=split)c.y=n.y-1.0-c.y;n.y=height;}
++        if(four||sony_code<=261){c.x=min(c.x,n.x-1.0-c.x);n.x=ceil(n.x*.5);}
++        if(four||sony_code==262||sony_code==263){c.y=min(c.y,n.y-1.0-c.y);n.y=ceil(n.y*.5);}
+         if(sony_code==261)c.y=n.y-1.0-c.y;
+         if(sony_code==263)c.x=n.x-1.0-c.x;
+         if(vertical){c=c.yx;n=n.yx;}
+@@ -666,8 +666,12 @@ float sony_spiral_rank(vec2 c,vec2 n) {
+ }
+ 
+ float sony_mosaic(vec2 p,float t,float raster) {
+-    vec2 physical=vec2(p.x*raster,p.y),size=vec2(sony_tile_size);
+-    vec2 count=ceil(vec2(raster,1.0)/size),cell=clamp(floor(physical/size),vec2(0),count-vec2(1));
++    vec2 extent=vec2(raster,1.0),size=vec2(sony_tile_size);
++    vec2 count=ceil(extent/size),offset=(count*size-extent)*.5;
++    // Clip both opposite edges equally. Odd central cells may be shared by
++    // opposed traversal regions; they remain whole square cells.
++    vec2 physical=vec2(p.x*raster,p.y)+offset;
++    vec2 cell=clamp(floor(physical/size),vec2(0),count-vec2(1));
+     float visible=floor(t*count.x*count.y);
+     bool inside=sony_tile_rank(cell,count)<visible;
+     float distance=sony_tile_size;
+@@ -677,7 +681,7 @@ float sony_mosaic(vec2 p,float t,float raster) {
+         vec2 c=cell+vec2(float(x),float(y));
+         if(any(lessThan(c,vec2(0)))||any(greaterThanEqual(c,count)))continue;
+         if((sony_tile_rank(c,count)<visible)==inside)continue;
+-        vec2 lo=c*size,hi=min(lo+size,vec2(raster,1.0));
++        vec2 lo=max(c*size,offset),hi=min((c+vec2(1))*size,extent+offset);
+         vec2 delta=max(max(lo-physical,physical-hi),vec2(0));
+         distance=min(distance,length(delta));
+     }
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 78bc1abd14f2c1f6330989d876c4ee7d5daf7ff6..571215736a666e8d79d7a7958b5ffc400514fb53 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.10.0
++0.10.1

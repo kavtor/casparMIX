@@ -1,5 +1,13 @@
 # Sony catalogue
 
+## Provisional operator review (2026-10-10)
+
+The operator reports the corrected 26/27/49 centering, 150/151/604/606 opening,
+269 origin and the recently listed DME direction/pivot corrections apparently
+correct. This is provisional morphology acceptance; a complete final review and
+modifier review remain. Dust Mix and the new colored trail failed acceptance:
+Dust Mix is corrected in 0.19.1; trail appearance remains deferred (#23).
+
 ## Current operator morphology review (2026-10-08)
 
 * Standard Wipes 1–24: operator-approved morphology.
