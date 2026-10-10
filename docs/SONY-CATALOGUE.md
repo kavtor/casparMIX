@@ -23,7 +23,7 @@ Dust Mix is corrected in 0.19.1; the trail partition is corrected in 0.19.2, wit
   than a strict clone requirement; an improved project interpretation may be
   adopted after comparison. Current geometry is retained during operator review.
 * Mosaic 269: corrected to upper-right origin in 0.18.2, awaiting operator recheck.
-* Karaoke 220–223, mosaic paths 224–247 and random dust 270–274 remain pending
+* Mosaic paths 224–247 and random dust 270–274 remain pending
   investigation and implementation.
 * This review covers morphology only, not modifier behavior or every time curve.
 
@@ -112,7 +112,7 @@ All masks use their producer raster, including when displayed by the MV.
 mask patterns. Double/four-way patterns divide the tile grid into independent
 regions; each traverses its snake/spiral over the full transition duration.
 An odd grid dimension yields unequal region cell counts without changing
-cell shape. The remaining 33 IDs are explicitly pending: 220–247, 270–274.
+cell shape. The remaining 29 IDs are explicitly pending: 224–247, 270–274.
 They are reserved and rejected by the renderer rather than aliased.
 
 Waterfall 266/267 descends, with left/right lane staggering respectively.
@@ -162,3 +162,15 @@ Radius is currently the mesh default .16; Sony Radius/Magnitude/Start Angle
 editors and diagonal variants are not claimed implemented. Existing global and
 custom DME backgrounds apply unchanged. Native verification covers morphology
 mechanics, not operator acceptance. 80 presets implemented, 189 remain reserved.
+
+## Karaoke row patterns (0.21.0)
+
+Manual 50135021M p.143 documents START, Row No and PHASE for 220–223.
+The pictograms say only Karaoke 1–4. Their project interpretation is 220 left-to-right,
+221 right-to-left, 222 top-to-bottom and 223 bottom-to-top. This is not
+operator-verified direction equivalence with Sony hardware. PHASE -100 reveals
+all lanes together, +100 completes a lane before the next; 0 overlaps lanes.
+START -100 starts the first lane and +100 the last, then wraps lane order.
+ROWNO 1–64 controls horizontal rows or vertical lanes. Default: 8/-100/0.
+Native command preparation exists; dedicated controller/touch parameter menus
+remain pending. 87 wipes execute, 29 remain reserved (224–247 and 270–274).

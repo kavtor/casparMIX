@@ -1,0 +1,15 @@
+diff --git a/src/accelerator/ogl/image/image_mixer.cpp b/src/accelerator/ogl/image/image_mixer.cpp
+index 4d3a03b9cda5bff50d715b3f44a4de570d07a447..41f6eca91f2654366ff91bcae4df2a1a8dde77e7 100644
+--- a/src/accelerator/ogl/image/image_mixer.cpp
++++ b/src/accelerator/ogl/image/image_mixer.cpp
+@@ -127,7 +127,9 @@ class image_renderer
+         std::shared_ptr<texture> layer_key_texture;
+ 
+         for (auto& layer : layers) {
+-            draw(target_texture, layer.sublayers, format_desc);
++            // The render tree is consumed once. Moving children avoids copying
++            // nested item/texture vectors at every composition depth.
++            draw(target_texture, std::move(layer.sublayers), format_desc);
+             draw(target_texture, std::move(layer), layer_key_texture, format_desc);
+         }
+     }
