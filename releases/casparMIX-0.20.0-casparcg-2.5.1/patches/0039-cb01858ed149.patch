@@ -1,0 +1,44 @@
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 7cca7711a0ddd81316ff859b8424d417b3a60b0b..66333910a4beec729370ff97e5044b345383eba4 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.17.1
++0.18.0
+diff --git a/src/core/producer/wipe/dme_producer.cpp b/src/core/producer/wipe/dme_producer.cpp
+index 0fff95eb06810b8a2595e899463e4b0e0b154864..cf5a44deb03c02a11bf9eeab15f47c06c05a84dd 100644
+--- a/src/core/producer/wipe/dme_producer.cpp
++++ b/src/core/producer/wipe/dme_producer.cpp
+@@ -222,12 +222,6 @@ draw_frame sony_primitive_frame(int code,draw_frame a,draw_frame b,double t,bool
+         else {a.transform().image_transform.opacity=0;project_sony_plane(b,vertical,angle,scale,aspect);}
+         return draw_frame::over(a,b);
+     }
+-    if(code>=1045&&code<=1048){
+-        const bool vertical=code<1047;
+-        const double sign=code==1045||code==1048?1:-1;
+-        project_sony_plane(b,vertical,sign*(1-t)*1.5707963267948966,1,aspect);
+-        return draw_frame::over(a,b);
+-    }
+     if(code==1201){
+         // Frame In: incoming texture grows from the centre over stationary A.
+         // Linear size is a project default; Sony multi-stage preparation and
+@@ -264,15 +258,16 @@ draw_frame sony_primitive_frame(int code,draw_frame a,draw_frame b,double t,bool
+         }
+         return result;
+     }
+-    // Four edge-hinged doors: live texture is projected, never masked in place.
+-    const int i=code-1041;const bool horizontal=i<2;const double hinge=i==1||i==3?1:0;
++    // Edge-hinged entry: 1041–1044 unfold from the far side; 1045–1048
++    // unfold from the near side. REV retraces each complete geometry path.
++    const int i=(code-1041)%4;const bool horizontal=i<2;const double hinge=i==1||i==3?1:0;
+     const double angle=(1-t)*1.5707963267948966,camera=3.5;
+     auto& x=b.transform().image_transform;x.enable_geometry_modifiers=true;
+     std::array<double,2>* corners[]={&x.perspective.ul,&x.perspective.ur,&x.perspective.lr,&x.perspective.ll};
+     const double xs[]={0,1,1,0},ys[]={0,0,1,1};
+     for(int point=0;point<4;++point){double px=(xs[point]-.5)*aspect,py=ys[point]-.5;
+         const double offset=(horizontal?xs[point]:ys[point])-hinge;
+-        const double z=std::abs(offset)*(horizontal?aspect:1)*std::sin(angle);
++        const double z=(code<=1044?-1:1)*std::abs(offset)*(horizontal?aspect:1)*std::sin(angle);
+         if(horizontal)px=((hinge-.5)+offset*std::cos(angle))*aspect;
+         else py=(hinge-.5)+offset*std::cos(angle);
+         const double scale=camera/(camera-z);*corners[point]={.5+px*scale/aspect,.5+py*scale};

@@ -1,0 +1,41 @@
+diff --git a/src/accelerator/ogl/image/shader.frag b/src/accelerator/ogl/image/shader.frag
+index 1033c82bb9125ac6c275da7c7de8f8647d8fe64a..02d86e83bf623ced8c25e24bd53428c83710ef1e 100644
+--- a/src/accelerator/ogl/image/shader.frag
++++ b/src/accelerator/ogl/image/shader.frag
+@@ -735,18 +735,26 @@ float sony_distance(vec2 p, float t, float cell_aspect)
+     if(sony_code==23)return (t*(bounds.x+bounds.y)-abs(normal.x)-abs(normal.y))/sqrt(1/(sx*sx)+1);
+     if(sony_code==24){vec2 metric=vec2(q.x*raster/ar,q.y),full=vec2(extent.x*raster/ar,extent.y);return (t*length(full)-length(metric))/max(1.0,1/ar);}
+     if(sony_code==26){
+-        float figure_aspect=ar*1.1;vec2 figure=vec2(q.x*raster/figure_aspect,q.y),full=vec2(extent.x*raster/figure_aspect,extent.y);float radius=max(t,1e-5)*1.6*length(full);vec2 h=figure/radius;h.y=-h.y;
++        float figure_aspect=ar*1.1;vec2 figure=vec2(q.x*raster/figure_aspect,q.y),full=vec2(extent.x*raster/figure_aspect,extent.y);float radius=max(t,1e-5)*1.6*length(full);vec2 h=figure/radius;
++        // Center the heart bounds: native y spans [-1, 1.236659171].
++        h.y=-h.y+0.1183295855;
+         float a=dot(h,h)-1.0,f=a*a*a-h.x*h.x*h.y*h.y*h.y;
+         vec2 gradient=vec2(6*h.x*a*a-2*h.x*h.y*h.y*h.y,6*h.y*a*a-3*h.x*h.x*h.y*h.y);
+         return -f*radius/max(length(vec2(gradient.x/figure_aspect,gradient.y)),1e-5);
+     }
+-    if(sony_code==27||sony_code==29){float radius=max(t,1e-5)*length(vec2(extent.x*raster/(ar*1.1),extent.y))*(sony_code==27?4.2:5.1);return sony_polygon(physical,vec2(radius*ar*1.1,radius),sony_code==27);}
++    if(sony_code==27||sony_code==29){float radius=max(t,1e-5)*length(vec2(extent.x*raster/(ar*1.1),extent.y))*(sony_code==27?4.2:5.1);// The five-point star spans [-1, cos(pi/5)] vertically.
++        vec2 point=physical;
++        if(sony_code==27)point.y-=radius*0.0954915028;
++        return sony_polygon(point,vec2(radius*ar*1.1,radius),sony_code==27);}
+     if(sony_code==49){
+         float count=float(sony_vertices),height=sony_vertices%2==0?2.0:1.0+cos(3.141592654/count);
+         float width=2.0*sin(6.283185307*floor(count*.25+.5)/count);
+         float figure_aspect=ar*height/width;
+         float radius=max(t,1e-5)*length(vec2(extent.x*raster/figure_aspect,extent.y))/cos(3.141592654/count);
+-        return sony_regular_polygon(physical,vec2(radius*figure_aspect,radius),sony_vertices);
++        // Odd polygons have a top vertex and a lower edge; center their bounds.
++        vec2 point=physical;
++        if(sony_vertices%2!=0)point.y-=radius*(1.0-cos(3.141592654/count))*.5;
++        return sony_regular_polygon(point,vec2(radius*figure_aspect,radius),sony_vertices);
+     }
+     if(sony_code>=100&&sony_code<=103){
+         int corner=sony_code-100;
+diff --git a/src/casparmix-version.txt b/src/casparmix-version.txt
+index 66333910a4beec729370ff97e5044b345383eba4..249afd517d9df2473f6cf45b440786f180bc656b 100644
+--- a/src/casparmix-version.txt
++++ b/src/casparmix-version.txt
+@@ -1 +1 @@
+-0.18.0
++0.18.1

@@ -150,3 +150,15 @@ Operator review assigns 1041–1044 to far-side entry and 1045–1048 to near-si
 entry with the same left/right/top/bottom pivots. The previous centre-axis
 interpretation of 1045–1048 is withdrawn. See `validate_sony_door_depth.py` for
 NORM/REV texture and endpoint checks against native program and rendered MV.
+
+## Edge page turns and rolls (0.20.0)
+
+Sony manual 50135021M describes the incoming video appearing as a turned page
+or unrolling scroll (pp.157,161); the supplied edge pictograms fix travel direction.
+1301/1321: right-to-left; 1302/1322: left-to-right; 1303/1323: bottom-to-top;
+1304/1324: top-to-bottom. Page uses a finite half-turn with a flat reflected
+back section; Roll keeps cylindrical winding. Both sample the live input.
+Radius is currently the mesh default .16; Sony Radius/Magnitude/Start Angle
+editors and diagonal variants are not claimed implemented. Existing global and
+custom DME backgrounds apply unchanged. Native verification covers morphology
+mechanics, not operator acceptance. 80 presets implemented, 189 remain reserved.

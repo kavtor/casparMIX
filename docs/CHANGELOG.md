@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20.0 — CasparCG 2.5.1 stable
+
+* Implement Sony edge Page Turn 1301–1304 and Roll 1321–1324 from the manual definitions and pictograms. Incoming B unfolds right-to-left, left-to-right, bottom-to-top or top-to-bottom; REV is the time-reversed A/B path.
+* Add finite-angle edge folding and vertical page meshes, retaining generic corner PAGE_CURL and PAGE_ROLL behavior. Live video is sampled on both faces; no rendered white-paper substitution.
+* Geometry sweeps and textured native captures verify directions, finite coordinates, exact endpoints, rewind, NORM/REV, AUTO and pixel-identical rendered PGM/MV. Catalogue grows to 80 native DME presets, 189 pending. Operator morphology remains unverified. No new dependencies.
+
 ## 0.19.2 — CasparCG 2.5.1 stable
 
 * Correct drawn asymmetric wipe borders: normalize the video blend below the color band so final A/color/B weights match the same distance field. The former whole-frame matte leaked video through the softened band (issue #23).
